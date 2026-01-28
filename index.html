@@ -592,4 +592,92 @@
         }
 
         function recalculateKdz() {
-            const startBody = parseFloat(document.getElementById('kdzBody').value
+            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
+            const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
+            const rows = document.querySelectorAll('#kdzTbody tr');
+            const totalRows = rows.length;
+            
+            let currentBody = startBody;
+            let accumulatedInt = 0;
+            
+            rows.forEach((row, index) => {
+                let payInput = parseFloat(row.querySelector('.input-body').value) || 0;
+                const inputElem = row.querySelector('.input-body');
+
+                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
+                
+                // Interest accrual (for previous days in real logic, but here we simplify 'morning body' base)
+                const dailyInt = currentBody * rate / 100;
+                accumulatedInt += dailyInt;
+                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
+                
+                // === VALIDATION: Max Payment ===
+                // If accumulated interest exists, we CANNOT pay off full body (must leave 0.01)
+                
+                let maxAllowed = currentBody;
+                if (accumulatedInt > 0.001) {
+                    maxAllowed = Math.max(0, currentBody - 0.01);
+                }
+
+                if (payInput > maxAllowed) {
+                    payInput = maxAllowed;
+                    inputElem.value = payInput.toFixed(2); // Auto-correct input
+                    // We can also add visual cue
+                    inputElem.style.borderColor = "var(--color-error)";
+                    setTimeout(() => inputElem.style.borderColor = "", 1000);
+                }
+
+                // Apply payment to Body
+                currentBody -= payInput;
+                if(currentBody < 0) currentBody = 0;
+                
+                row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
+                row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
+            });
+
+            // 2. Final Settlement
+            const totalDebt = currentBody + accumulatedInt;
+            document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
+
+            let totalPayment = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
+            const isCredit = document.getElementById('kdzIsCredit').checked;
+            const errorMsg = document.getElementById('kdzError');
+
+            if (totalPayment > totalDebt + 0.01) { 
+                errorMsg.classList.add('visible');
+            } else {
+                errorMsg.classList.remove('visible');
+            }
+
+            // Payment logic: Interest first if Last Day/Full Repay (simulated by this field)
+            let paymentForInterest = 0;
+            let paymentForBody = 0;
+
+            if (totalPayment >= accumulatedInt) {
+                paymentForInterest = accumulatedInt;
+                paymentForBody = totalPayment - accumulatedInt;
+                if (paymentForBody > currentBody) paymentForBody = currentBody;
+            } else {
+                paymentForInterest = totalPayment;
+                paymentForBody = 0;
+            }
+
+            const remainingBody = currentBody - paymentForBody;
+            const commission = isCredit ? totalPayment * 0.04 : 0;
+
+            document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
+            document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
+            document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
+            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
+        }
+
+        document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
+        // Initialize everything
+        addPeriod31(); 
+        addPeriod62(); 
+        addPeriodOverdraft(); 
+        rebuildKdzTable(); 
+        updateSliderVisuals();
+    </script>
+</body>
+</html>
