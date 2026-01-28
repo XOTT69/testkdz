@@ -124,6 +124,17 @@
             font-size: 13px;
         }
         .btn-ghost:hover { background-color: rgba(33, 128, 141, 0.2); }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--color-border);
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+        .btn-outline:hover {
+            background-color: rgba(0,0,0,0.03);
+            color: var(--color-text);
+        }
         
         /* Results */
         .result-section {
@@ -182,6 +193,33 @@
             border-radius: 4px;
         }
         .remove-btn:hover { background-color: rgba(192, 21, 47, 0.1); color: rgba(192, 21, 47, 1); }
+
+        /* --- DETAILS LOG --- */
+        .details-log-container {
+            margin-top: var(--space-md);
+            border-top: 1px solid var(--color-border);
+            padding-top: var(--space-md);
+        }
+        .details-log {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-md);
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: var(--space-sm);
+        }
+        .copy-btn-container {
+            display: flex; justify-content: flex-end; margin-top: 4px;
+        }
+        .text-link {
+            color: var(--color-primary); cursor: pointer; font-size: 13px; border: none; background: none; padding: 0;
+            text-decoration: underline;
+        }
 
         /* --- COMPACT TABLE --- */
         .kdz-table-container {
@@ -299,6 +337,17 @@
                         <span class="result-label">Овердрафт (<span id="appliedRate">0%</span>)</span>
                         <span class="result-value" id="interestOverdraft">0 грн</span>
                     </div>
+
+                    <!-- Details Dropdown -->
+                    <div class="details-log-container">
+                        <button class="text-link" onclick="toggleDetails()">📜 Показати детальну розшифровку</button>
+                        <div id="detailsArea" style="display: none;">
+                            <div class="details-log" id="detailsLogText"></div>
+                            <div class="copy-btn-container">
+                                <button class="btn btn-outline" style="width: auto; height: 28px; padding: 0 12px; font-size: 12px;" onclick="copyDetails()">Копіювати текст</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -400,13 +449,11 @@
                 <!-- Окремий блок погашення відсотків -->
                 <div class="payment-section">
                     <h3 style="margin-top: 0; margin-bottom: var(--space-sm);">Фінальне погашення відсотків</h3>
-                    <!-- Fix: Align items flex-end to align input bottom with checkbox -->
-                    <div class="grid-2" style="align-items: flex-end;"> 
+                    <div class="grid-2" style="align-items: flex-end;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Сплачено відсотків (грн)</label>
                             <input type="number" id="kdzPayInterest" placeholder="0" oninput="recalculateKdz()">
                         </div>
-                        <!-- Fix: Match height and use flex to center vertically -->
                         <div class="form-group" style="margin-bottom: 0; height: 32px; display: flex; align-items: center;">
                             <label style="display: flex; align-items: center; cursor: pointer; margin: 0; font-weight: normal;">
                                 <input type="checkbox" id="kdzIsCredit" style="width: auto; margin-right: 8px;" onchange="recalculateKdz()">
@@ -509,6 +556,9 @@
 
         function calculateCredit() {
             const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
+            let logText = "";
+            let overallDay = 0; // for continuous numbering in log
+
             const calcGroup = (selector, rate) => {
                 let total = 0;
                 document.querySelectorAll(selector).forEach(card => {
@@ -516,10 +566,21 @@
                     const to = parseInt(card.querySelector('[class*="-to"]').value) || 0;
                     const amt = parseFloat(card.querySelector('[class*="-amount"]').value) || 0;
                     const days = to - from + 1;
-                    if(days > 0) total += (amt * days * rate * 12) / daysInYear / 100;
+                    
+                    if(days > 0) {
+                        // Per day calculation for log
+                        for(let i=0; i<days; i++) {
+                            const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100;
+                            // Format: "Day: Amount x 1 x Rate% x 12 / 365 = Res"
+                            const dayNum = from + i; // using absolute day from input
+                            logText += `${dayNum}: ${amt.toFixed(2)} × 1 × ${rate}% × 12 / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
+                            total += dailyInterest;
+                        }
+                    }
                 });
                 return total;
             };
+
             const i31 = calcGroup('#periods31 .period-card', 3.1);
             const i62 = calcGroup('#periods62 .period-card', 6.2);
             const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
@@ -531,6 +592,24 @@
             document.getElementById('appliedRate').textContent = odRate + '%';
             document.getElementById('interestOverdraft').textContent = iOd.toFixed(2) + ' грн';
             document.getElementById('resultCredit').style.display = 'block';
+
+            // Log update - sort by day number approximately or just append
+            // Note: Currently it appends groups in order of calculation. 
+            // If user enters periods 1-10 then 20-30, log is fine.
+            document.getElementById('detailsLogText').textContent = logText;
+        }
+
+        function toggleDetails() {
+            const el = document.getElementById('detailsArea');
+            if(el.style.display === 'none') el.style.display = 'block';
+            else el.style.display = 'none';
+        }
+
+        function copyDetails() {
+            const text = document.getElementById('detailsLogText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Скопійовано!');
+            });
         }
 
         // INSTALLMENT
