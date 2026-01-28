@@ -76,11 +76,11 @@
         .btn-outline { background-color: transparent; border: 1px solid var(--color-border); color: var(--color-text-secondary); font-weight: 500; }
         
         .result-section { margin-top: var(--space-lg); padding: var(--space-md); background-color: var(--color-background); border-radius: var(--radius-base); border: 1px solid var(--color-card-border); }
-        .result-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--color-border); }
+        .result-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--color-border); align-items: center; }
         .result-item:last-child { border-bottom: none; }
-        .result-label { color: var(--color-text-secondary); font-size: 13px; }
-        .result-value { font-weight: 600; font-size: 14px; color: var(--color-text); }
-        .result-value.highlight { color: var(--color-primary); font-size: 16px; }
+        .result-label { color: var(--color-text-secondary); font-size: 14px; }
+        .result-value { font-weight: 600; font-size: 16px; color: var(--color-text); }
+        .result-value.highlight { color: var(--color-primary); font-size: 18px; }
         .result-value.success { color: var(--color-success); }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
@@ -115,10 +115,6 @@
         .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
         .error-message.visible { display: block; }
-        
-        .separator-row { display: flex; align-items: center; margin: 8px 0; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .separator-row::before, .separator-row::after { content: ""; flex: 1; border-bottom: 1px solid var(--color-border); }
-        .separator-row span { padding: 0 8px; }
     </style>
 </head>
 <body>
@@ -278,15 +274,19 @@
                 </div>
 
                 <div class="result-section">
-                    <div class="result-item"><span class="result-label">Борг (Тіло + % до списання)</span><span class="result-value highlight" id="liveTotalDebt">0.00 грн</span></div>
-                    <div class="result-item"><span class="result-label">Комісія 4%</span><span class="result-value" id="liveCommission">0.00 грн</span></div>
+                    <div class="result-item">
+                        <span class="result-label">Борг (Тіло + % до списання)</span>
+                        <span class="result-value" id="liveTotalDebt">0.00 грн</span>
+                    </div>
                     
-                    <div class="separator-row"><span>Вже погашено</span></div>
-                    
-                    <div class="result-item"><span class="result-label">Погашено тіла</span><span class="result-value success" id="liveBodyPaid">0.00 грн</span></div>
-                    <div class="result-item"><span class="result-label">Погашено відсотків</span><span class="result-value success" id="liveInterestPaid">0.00 грн</span></div>
-                    <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-sm); margin-top: 4px;">
-                        <span class="result-label" style="font-weight: 600;">Залишилось до повного погашення</span><span class="result-value highlight" id="liveRemainToPay" style="color: var(--color-primary);">0.00 грн</span>
+                    <div class="result-item" id="paidRow" style="display: none; background-color: rgba(39, 174, 96, 0.05);">
+                        <span class="result-label" style="color: var(--color-success);">Вже погашено</span>
+                        <span class="result-value success" id="livePaidTotal">0.00 грн</span>
+                    </div>
+
+                    <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-md); margin-top: 4px;">
+                        <span class="result-label" style="font-weight: 600;">Залишилось до повного погашення</span>
+                        <span class="result-value highlight" id="liveRemainToPay" style="color: var(--color-primary);">0.00 грн</span>
                     </div>
                 </div>
             </div>
@@ -444,6 +444,7 @@
             let currentBody = startBody; let accumulatedInt = 0;
             
             let totalCommission = 0;
+            let paidFromBodyInTable = 0;
 
             rows.forEach((row) => {
                 const inputElem = row.querySelector('.input-body');
@@ -485,6 +486,8 @@
                 currentBody -= effectivePayment; 
                 if(currentBody < 0) currentBody = 0;
                 
+                paidFromBodyInTable += effectivePayment;
+
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
@@ -513,18 +516,23 @@
                 paymentForBody = effectiveFinalPayment; 
                 paymentForInterest = 0;
             }
-
-            const remainingBody = currentBody - paymentForBody;
-            const combinedCommission = totalCommission + finalCommission;
             
-            const totalPaid = paymentForBody + paymentForInterest;
-            const remainToPay = totalDebt - totalPaid;
+            // Total Paid Calc
+            const totalPaidNow = paidFromBodyInTable + paymentForBody + paymentForInterest;
+            const remainToPay = totalDebt - (paymentForBody + paymentForInterest); 
+            // Note: totalDebt is AFTER table payments. So remaining is simply debt - final payment.
 
+            document.getElementById('liveTotalDebt').textContent = (totalDebt + paidFromBodyInTable).toFixed(2) + ' грн'; // Show original debt implied? Or current? Let's show current debt.
+            // Actually user wants "Debt (Body + Interest to write off)". This usually means CURRENT debt.
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
-            document.getElementById('liveCommission').textContent = combinedCommission.toFixed(2) + ' грн';
-            
-            document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
-            document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
+
+            const paidRow = document.getElementById('paidRow');
+            if (totalPaidNow > 0) {
+                paidRow.style.display = 'flex';
+                document.getElementById('livePaidTotal').textContent = totalPaidNow.toFixed(2) + ' грн';
+            } else {
+                paidRow.style.display = 'none';
+            }
             
             document.getElementById('liveRemainToPay').textContent = remainToPay.toFixed(2) + ' грн';
         }
