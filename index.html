@@ -253,7 +253,7 @@
             font-size: 13px; text-align: right;
             border: 1px solid var(--color-border);
             border-radius: 4px;
-            height: 26px; /* Ultra compact inputs in table */
+            height: 26px;
             margin: 0;
         }
         .kdz-input:focus { border-color: var(--color-primary); outline: none; }
@@ -519,7 +519,7 @@
             });
         });
 
-        // CREDIT LIMIT - NEW DATE LOGIC
+        // CREDIT LIMIT - SEPARATE LOG SECTIONS
         function addPeriod31() {
             periodCounter31++;
             const today = getTodayString();
@@ -570,10 +570,15 @@
 
         function calculateCredit() {
             const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
-            let logText = "";
             
-            const calcGroup = (selector, rate) => {
+            let log31 = "";
+            let log62 = "";
+            let logOd = "";
+            
+            const calcGroup = (selector, rate, logVar) => {
                 let total = 0;
+                let logText = "";
+                
                 document.querySelectorAll(selector).forEach(card => {
                     const fromStr = card.querySelector('[class*="-from"]').value;
                     const toStr = card.querySelector('[class*="-to"]').value;
@@ -583,7 +588,6 @@
                         const fromDate = new Date(fromStr);
                         const toDate = new Date(toStr);
                         
-                        // Loop through dates
                         let currentDate = new Date(fromDate);
                         while (currentDate <= toDate) {
                             const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100;
@@ -596,22 +600,43 @@
                         }
                     }
                 });
-                return total;
+                return {total, logText};
             };
 
-            const i31 = calcGroup('#periods31 .period-card', 3.1);
-            const i62 = calcGroup('#periods62 .period-card', 6.2);
+            const res31 = calcGroup('#periods31 .period-card', 3.1);
+            const res62 = calcGroup('#periods62 .period-card', 6.2);
+            
             const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
-            const iOd = calcGroup('#periodsOverdraft .period-card', odRate);
+            const resOd = calcGroup('#periodsOverdraft .period-card', odRate);
 
-            document.getElementById('interest31').textContent = i31.toFixed(2) + ' грн';
-            document.getElementById('interest62').textContent = i62.toFixed(2) + ' грн';
-            document.getElementById('totalInterest').textContent = (i31 + i62).toFixed(2) + ' грн';
+            document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн';
             document.getElementById('appliedRate').textContent = odRate + '%';
-            document.getElementById('interestOverdraft').textContent = iOd.toFixed(2) + ' грн';
+            document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн';
             document.getElementById('resultCredit').style.display = 'block';
 
-            document.getElementById('detailsLogText').textContent = logText;
+            // Build consolidated log with sections
+            let fullLog = "";
+            
+            if(res31.logText) {
+                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 3.1% ===\n\n";
+                fullLog += res31.logText;
+                fullLog += "\n";
+            }
+            
+            if(res62.logText) {
+                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 6.2% ===\n\n";
+                fullLog += res62.logText;
+                fullLog += "\n";
+            }
+            
+            if(resOd.logText) {
+                fullLog += `=== ОВЕРДРАФТ (${odRate}%) ===\n\n`;
+                fullLog += resOd.logText;
+            }
+
+            document.getElementById('detailsLogText').textContent = fullLog;
         }
 
         function toggleDetails() {
