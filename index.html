@@ -378,7 +378,7 @@
                     </table>
                 </div>
 
-                <!-- NEW PAYMENT SECTION -->
+                <!-- PAYMENT SECTION -->
                 <div class="payment-section">
                     <h3 style="margin-top: 0; margin-bottom: var(--space-sm);">Повне погашення</h3>
                     <div class="grid-2" style="align-items: flex-start;">
@@ -563,7 +563,7 @@
         function copyDetailsInst() { navigator.clipboard.writeText(document.getElementById('detailsLogInst').textContent).then(() => alert('Copied!')); }
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
-        // KDZ
+        // KDZ - UPDATED LOGIC
         function resetKdz() {
             document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
             document.getElementById('kdzTotalPayInput').value = '';
@@ -598,7 +598,7 @@
             let currentBody = startBody;
             let accumulatedInt = 0;
             
-            // 1. Calculate table accumulation based on MANUAL daily inputs (if any)
+            // 1. Calculate table accumulation based on MANUAL daily inputs (PARTIAL BODY ONLY)
             rows.forEach(row => {
                 const payBody = parseFloat(row.querySelector('.input-body').value) || 0;
                 row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
@@ -607,6 +607,10 @@
                 accumulatedInt += dailyInt;
                 
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
+                
+                // Allow partial body payment but prevent full 0.00 if interest exists
+                // Note: We don't strictly block here to keep UX smooth, but we handle final settlement order below.
+                
                 currentBody -= payBody;
                 if(currentBody < 0) currentBody = 0;
                 
@@ -622,14 +626,13 @@
             const isCredit = document.getElementById('kdzIsCredit').checked;
             const errorMsg = document.getElementById('kdzError');
 
-            if (totalPayment > totalDebt + 0.01) { // 0.01 floating point tolerance
+            if (totalPayment > totalDebt + 0.01) { 
                 errorMsg.classList.add('visible');
-                // Cap visual logic to debt, but warn
             } else {
                 errorMsg.classList.remove('visible');
             }
 
-            // Distribute Payment: First Interest, Then Body
+            // Distribute Payment: First Interest, Then Body (PRIORITY)
             let paymentForInterest = 0;
             let paymentForBody = 0;
 
@@ -639,10 +642,13 @@
                 if (paymentForBody > currentBody) paymentForBody = currentBody;
             } else {
                 paymentForInterest = totalPayment;
-                paymentForBody = 0;
+                paymentForBody = 0; // Can't pay body until interest is clear
             }
 
             const remainingBody = currentBody - paymentForBody;
+            
+            // Commission on TOTAL transaction amount (Body + Interest paid via UI + Body paid via Table which is implicitly covered if user used credit funds for that too??)
+            // Simplified: Commission on the amount entered in "Total Payment" field
             const commission = isCredit ? totalPayment * 0.04 : 0;
 
             // Update UI
@@ -657,4 +663,3 @@
     </script>
 </body>
 </html>
-
