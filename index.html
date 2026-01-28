@@ -414,9 +414,15 @@
             document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн';
             document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
             document.getElementById('resultInst').style.display = 'block';
+            
+            // FIX: Detailed log with split
             let logText = `СУМА: ${amt.toFixed(2)} грн | ТЕРМІН: ${mos} міс\n`;
-            for (let i = 1; i <= mos; i++) logText += `Місяць ${i}: ${monthlyTotal.toFixed(2)} грн\n`;
-            logText += `\nЗАГАЛОМ: ${(amt + over).toFixed(2)} грн`;
+            logText += `--------------------------------\n`;
+            for (let i = 1; i <= mos; i++) {
+                logText += `Місяць ${i}: ${monthlyPrincipal.toFixed(2)} (тіло) + ${fee.toFixed(2)} (ком.) = ${monthlyTotal.toFixed(2)} грн\n`;
+            }
+            logText += `--------------------------------\n`;
+            logText += `ЗАГАЛОМ: ${(amt + over).toFixed(2)} грн`;
             document.getElementById('detailsLogInst').textContent = logText;
         }
         function toggleDetailsInst() { const el = document.getElementById('detailsAreaInst'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
