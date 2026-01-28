@@ -239,6 +239,14 @@
                     <div class="form-group" style="margin-bottom: 0;"><label>Днів (max 30)</label><input type="number" id="kdzDays" value="14" min="1" max="30" oninput="rebuildKdzTable()"></div>
                     <div class="form-group" style="margin-bottom: 0;"><label>Ставка/день</label><select id="kdzRate" onchange="recalculateKdz()"><option value="0.3">0.3%</option><option value="0.5">0.5%</option></select></div>
                 </div>
+                
+                <div class="form-group" style="margin-top: var(--space-md); margin-bottom: var(--space-md);">
+                     <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                        <input type="checkbox" id="kdzIsCredit" style="width: auto; margin-right: 8px;" onchange="recalculateKdz()"> 
+                        Оплата з кредитних коштів (+4% комісія)
+                    </label>
+                </div>
+
                 <div class="kdz-table-container">
                     <table class="kdz-table" id="kdzTable">
                         <thead>
@@ -251,42 +259,18 @@
                     </table>
                 </div>
                 
-                <div class="payment-section">
-                    <h3 style="margin-top: 0; margin-bottom: var(--space-sm);">Повне погашення</h3>
-                    <div class="grid-2">
-                        <!-- Left Column: Input -->
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Сума погашення (загальна)</label>
-                            <input type="number" id="kdzTotalPayInput" placeholder="0" oninput="recalculateKdz()">
-                            <div id="kdzError" class="error-message">Сума перевищує борг!</div>
-                        </div>
-                        <!-- Right Column: Checkbox -->
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label style="opacity: 0;">Опція</label>
-                            <div style="height: 36px; display: flex; align-items: center;">
-                                <label style="display: flex; align-items: center; cursor: pointer; margin: 0; font-weight: normal;">
-                                    <input type="checkbox" id="kdzIsCredit" style="width: auto; margin-right: 8px;" onchange="recalculateKdz()"> 
-                                    З кредитних (+4%)
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="result-section">
+                <div class="result-section" style="margin-top: var(--space-lg);">
                     <div class="result-item">
-                        <span class="result-label">Борг (Тіло + % до списання)</span>
-                        <span class="result-value" id="liveTotalDebt">0.00 грн</span>
+                        <span class="result-label">Залишок тіла</span>
+                        <span class="result-value" id="kdzRemBody">0.00 грн</span>
                     </div>
-                    
-                    <div class="result-item" id="paidRow" style="display: none; background-color: rgba(39, 174, 96, 0.05);">
-                        <span class="result-label" style="color: var(--color-success);">Вже погашено</span>
-                        <span class="result-value success" id="livePaidTotal">0.00 грн</span>
+                    <div class="result-item">
+                        <span class="result-label">Накопичені відсотки</span>
+                        <span class="result-value" id="kdzRemInt">0.00 грн</span>
                     </div>
-
                     <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-md); margin-top: 4px;">
-                        <span class="result-label" style="font-weight: 600;">Залишилось до повного погашення</span>
-                        <span class="result-value highlight" id="liveRemainToPay" style="color: var(--color-primary);">0.00 грн</span>
+                        <span class="result-label" style="font-weight: 600;">Всього до повного погашення</span>
+                        <span class="result-value highlight" id="kdzTotalDebt" style="color: var(--color-primary);">0.00 грн</span>
                     </div>
                 </div>
             </div>
@@ -415,7 +399,6 @@
             document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
             document.getElementById('resultInst').style.display = 'block';
             
-            // FIX: Detailed log with split
             let logText = `СУМА: ${amt.toFixed(2)} грн | ТЕРМІН: ${mos} міс\n`;
             logText += `--------------------------------\n`;
             for (let i = 1; i <= mos; i++) {
@@ -430,7 +413,7 @@
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
         // KDZ LOGIC
-        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.getElementById('kdzTotalPayInput').value = ''; document.getElementById('kdzIsCredit').checked = false; recalculateKdz(); }
+        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.getElementById('kdzIsCredit').checked = false; recalculateKdz(); }
         function rebuildKdzTable() {
             let days = parseInt(document.getElementById('kdzDays').value) || 14;
             if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
@@ -449,9 +432,6 @@
             const rows = document.querySelectorAll('#kdzTbody tr');
             let currentBody = startBody; let accumulatedInt = 0;
             
-            let totalCommission = 0;
-            let paidFromBodyInTable = 0;
-
             rows.forEach((row) => {
                 const inputElem = row.querySelector('.input-body');
                 let rawInput = parseFloat(inputElem.value) || 0;
@@ -461,8 +441,6 @@
 
                 if (isCredit && rawInput > 0) {
                     const cellCommission = rawInput * 0.04;
-                    totalCommission += cellCommission;
-                    
                     if (!displayHelper) {
                         displayHelper = document.createElement('span');
                         displayHelper.className = 'effective-val commission-val';
@@ -478,9 +456,6 @@
                 const dailyInt = currentBody * rate / 100;
                 accumulatedInt += dailyInt;
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
-                
-                let maxAllowed = currentBody;
-                if (accumulatedInt > 0.001) maxAllowed = Math.max(0, currentBody - 0.01);
 
                 if (effectivePayment > currentBody) {
                      effectivePayment = currentBody; 
@@ -491,56 +466,15 @@
 
                 currentBody -= effectivePayment; 
                 if(currentBody < 0) currentBody = 0;
-                
-                paidFromBodyInTable += effectivePayment;
 
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // FINAL PAYMENT SECTION
-            const totalDebt = currentBody + accumulatedInt;
-            
-            const totalPaymentInput = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
-            let effectiveFinalPayment = totalPaymentInput;
-            let finalCommission = 0;
-
-            if (isCredit) {
-                finalCommission = totalPaymentInput * 0.04;
-            }
-
-            const errorMsg = document.getElementById('kdzError');
-            if (effectiveFinalPayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
-
-            // Distribute
-            let paymentForBody = 0; let paymentForInterest = 0;
-            if (effectiveFinalPayment >= currentBody) {
-                paymentForBody = currentBody;
-                const remainingMoney = effectiveFinalPayment - currentBody;
-                paymentForInterest = (remainingMoney >= accumulatedInt) ? accumulatedInt : remainingMoney;
-            } else {
-                paymentForBody = effectiveFinalPayment; 
-                paymentForInterest = 0;
-            }
-            
-            // Total Paid Calc
-            const totalPaidNow = paidFromBodyInTable + paymentForBody + paymentForInterest;
-            const remainToPay = totalDebt - (paymentForBody + paymentForInterest); 
-            // Note: totalDebt is AFTER table payments. So remaining is simply debt - final payment.
-
-            document.getElementById('liveTotalDebt').textContent = (totalDebt + paidFromBodyInTable).toFixed(2) + ' грн'; // Show original debt implied? Or current? Let's show current debt.
-            // Actually user wants "Debt (Body + Interest to write off)". This usually means CURRENT debt.
-            document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
-
-            const paidRow = document.getElementById('paidRow');
-            if (totalPaidNow > 0) {
-                paidRow.style.display = 'flex';
-                document.getElementById('livePaidTotal').textContent = totalPaidNow.toFixed(2) + ' грн';
-            } else {
-                paidRow.style.display = 'none';
-            }
-            
-            document.getElementById('liveRemainToPay').textContent = remainToPay.toFixed(2) + ' грн';
+            // Update Final Summary
+            document.getElementById('kdzRemBody').textContent = currentBody.toFixed(2) + ' грн';
+            document.getElementById('kdzRemInt').textContent = accumulatedInt.toFixed(2) + ' грн';
+            document.getElementById('kdzTotalDebt').textContent = (currentBody + accumulatedInt).toFixed(2) + ' грн';
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
