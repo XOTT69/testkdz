@@ -60,7 +60,16 @@
         /* Compact Headers */
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; color: var(--color-text); }
         .subtitle { color: var(--color-text-secondary); margin-bottom: var(--space-lg); font-size: 13px; }
-        h2 { font-size: 18px; margin: 0; font-weight: 600; } 
+        
+        /* H2 Unified Style - Flexbox for badge alignment */
+        h2 { 
+            font-size: 18px; 
+            margin: 0; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+        } 
+        
         h3 { font-size: 15px; margin: var(--space-md) 0 var(--space-sm) 0; font-weight: 600; }
         
         /* Compact Tabs */
@@ -88,6 +97,7 @@
             margin-bottom: var(--space-lg);
         }
         
+        /* Unified Card Header Row */
         .card-header-row {
             display: flex; 
             justify-content: space-between; 
@@ -367,10 +377,9 @@
         <div class="tab-content" id="installment">
             <div class="card">
                 <div class="card-header-row">
-                    <div style="display: flex; align-items: center;">
-                        <h2>Розстрочка</h2>
-                        <span class="rate-badge">1.9%/міс</span>
-                    </div>
+                    <!-- Unified structure: H2 as direct child, badge inside H2 -->
+                    <h2>Розстрочка <span class="rate-badge">1.9%/міс</span></h2>
+                    
                     <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetInst()">
                         🔄 Очистити
                     </button>
