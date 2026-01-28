@@ -107,6 +107,7 @@
         .kdz-input.error { border-color: var(--color-error); background-color: rgba(229, 77, 77, 0.1); }
         .text-dim { color: var(--color-text-secondary); font-size: 12px; }
         .text-bold { font-weight: 600; }
+        .effective-val { font-size: 10px; color: var(--color-primary); display: block; line-height: 1; text-align: right; margin-top: 2px; }
         
         .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
@@ -411,14 +412,14 @@
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
         // KDZ LOGIC
-        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = ''); document.getElementById('kdzTotalPayInput').value = ''; document.getElementById('kdzIsCredit').checked = false; recalculateKdz(); }
+        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.getElementById('kdzTotalPayInput').value = ''; document.getElementById('kdzIsCredit').checked = false; recalculateKdz(); }
         function rebuildKdzTable() {
             let days = parseInt(document.getElementById('kdzDays').value) || 14;
             if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
             const tbody = document.getElementById('kdzTbody'); tbody.innerHTML = '';
             for (let d = 1; d <= days; d++) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td style="text-align: center; color: var(--color-text-secondary);">${d}</td><td class="cell-body-start text-dim">0.00</td><td class="cell-int-daily text-dim">0.00</td><td style="background-color: rgba(94, 82, 64, 0.02);"><input type="number" class="kdz-input input-body" placeholder="0"></td><td class="cell-body-end text-bold">0.00</td><td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
+                tr.innerHTML = `<td style="text-align: center; color: var(--color-text-secondary);">${d}</td><td class="cell-body-start text-dim">0.00</td><td class="cell-int-daily text-dim">0.00</td><td style="background-color: rgba(94, 82, 64, 0.02); position: relative;"><input type="number" class="kdz-input input-body" placeholder="0"></td><td class="cell-body-end text-bold">0.00</td><td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
                 tbody.appendChild(tr);
             }
             recalculateKdz();
@@ -426,71 +427,101 @@
         function recalculateKdz() {
             const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
+            const isCredit = document.getElementById('kdzIsCredit').checked;
             const rows = document.querySelectorAll('#kdzTbody tr');
             let currentBody = startBody; let accumulatedInt = 0;
             
+            // Total commission tracking
+            let totalCommission = 0;
+
             rows.forEach((row) => {
-                let payInput = parseFloat(row.querySelector('.input-body').value) || 0;
                 const inputElem = row.querySelector('.input-body');
+                let rawInput = parseFloat(inputElem.value) || 0;
+                
+                // Show effective payment if credit
+                let effectivePayment = rawInput;
+                let cellCommission = 0;
+                let displayHelper = row.querySelector('.effective-val');
+
+                if (isCredit && rawInput > 0) {
+                    effectivePayment = rawInput / 1.04;
+                    cellCommission = rawInput - effectivePayment;
+                    totalCommission += cellCommission;
+                    
+                    if (!displayHelper) {
+                        displayHelper = document.createElement('span');
+                        displayHelper.className = 'effective-val';
+                        inputElem.parentElement.appendChild(displayHelper);
+                    }
+                    displayHelper.textContent = `Тіло: ${effectivePayment.toFixed(2)}`;
+                } else {
+                     if (displayHelper) displayHelper.remove();
+                }
+
                 row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
                 
                 const dailyInt = currentBody * rate / 100;
                 accumulatedInt += dailyInt;
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 
-                // VALIDATION
+                // VALIDATION: Cannot pay more than body
                 let maxAllowed = currentBody;
-                if (accumulatedInt > 0.001) maxAllowed = Math.max(0, currentBody - 0.01);
-                
-                if (payInput > maxAllowed) {
-                    payInput = maxAllowed; inputElem.value = payInput.toFixed(2);
-                    inputElem.style.borderColor = "var(--color-error)"; setTimeout(() => inputElem.style.borderColor = "", 1000);
+                if (accumulatedInt > 0.001) maxAllowed = Math.max(0, currentBody - 0.01); // leave penny for interest logic if needed, but simplified here:
+
+                if (effectivePayment > currentBody) {
+                     // If user entered too much, we cap it. 
+                     // But complex reverse calc for credit. Simply cap effective payment to body.
+                     effectivePayment = currentBody;
+                     // Reverse calculate raw input for UI consistency? 
+                     // Or just warn. Let's just limit effective.
+                     inputElem.style.borderColor = "var(--color-error)";
+                } else {
+                     inputElem.style.borderColor = "var(--color-border)";
                 }
-                currentBody -= payInput; if(currentBody < 0) currentBody = 0;
+
+                currentBody -= effectivePayment; 
+                if(currentBody < 0) currentBody = 0;
+                
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // FINAL PAYMENT
+            // FINAL PAYMENT SECTION LOGIC
             const totalDebt = currentBody + accumulatedInt;
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
             
             const totalPaymentInput = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
-            const isCredit = document.getElementById('kdzIsCredit').checked;
-            
-            // Logic change: Separate effective payment and commission
-            let effectivePayment = totalPaymentInput;
-            let commission = 0;
+            let effectiveFinalPayment = totalPaymentInput;
+            let finalCommission = 0;
 
             if (isCredit) {
-                // If 1000 total, commission is included in that 1000? Or 1000 + 4%?
-                // Usually "from credit funds" means you pay 1040 to cover 1000 debt.
-                // But the input is "Total Payment Amount".
-                // Let's assume user inputs HOW MUCH they send. 
-                // So if they send 1000, 38.46 is comm, 961.54 is payment.
-                effectivePayment = totalPaymentInput / 1.04;
-                commission = totalPaymentInput - effectivePayment;
+                effectiveFinalPayment = totalPaymentInput / 1.04;
+                finalCommission = totalPaymentInput - effectiveFinalPayment;
             }
 
+            // Error check
             const errorMsg = document.getElementById('kdzError');
-            if (effectivePayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
+            if (effectiveFinalPayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
 
-            // PRIORITY: Body -> Interest
+            // Distribute final payment (Body -> Interest)
             let paymentForBody = 0; let paymentForInterest = 0;
-            if (effectivePayment >= currentBody) {
+            
+            if (effectiveFinalPayment >= currentBody) {
                 paymentForBody = currentBody;
-                const remainingMoney = effectivePayment - currentBody;
+                const remainingMoney = effectiveFinalPayment - currentBody;
                 paymentForInterest = (remainingMoney >= accumulatedInt) ? accumulatedInt : remainingMoney;
             } else {
-                paymentForBody = effectivePayment; paymentForInterest = 0;
+                paymentForBody = effectiveFinalPayment; 
+                paymentForInterest = 0;
             }
 
             const remainingBody = currentBody - paymentForBody;
-            
+            const combinedCommission = totalCommission + finalCommission;
+
             document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
             document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
             document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
-            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
+            document.getElementById('liveCommission').textContent = combinedCommission.toFixed(2) + ' грн';
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
