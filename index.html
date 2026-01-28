@@ -107,7 +107,8 @@
         .kdz-input.error { border-color: var(--color-error); background-color: rgba(229, 77, 77, 0.1); }
         .text-dim { color: var(--color-text-secondary); font-size: 12px; }
         .text-bold { font-weight: 600; }
-        .effective-val { font-size: 10px; color: var(--color-primary); display: block; line-height: 1; text-align: right; margin-top: 2px; }
+        .effective-val { font-size: 10px; color: var(--color-text-secondary); display: block; line-height: 1; text-align: right; margin-top: 2px; }
+        .commission-val { color: var(--color-error); }
         
         .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
@@ -431,29 +432,26 @@
             const rows = document.querySelectorAll('#kdzTbody tr');
             let currentBody = startBody; let accumulatedInt = 0;
             
-            // Total commission tracking
             let totalCommission = 0;
 
             rows.forEach((row) => {
                 const inputElem = row.querySelector('.input-body');
                 let rawInput = parseFloat(inputElem.value) || 0;
                 
-                // Show effective payment if credit
-                let effectivePayment = rawInput;
-                let cellCommission = 0;
+                // Logic: Input = Body Repayment
+                let effectivePayment = rawInput; 
                 let displayHelper = row.querySelector('.effective-val');
 
                 if (isCredit && rawInput > 0) {
-                    effectivePayment = rawInput / 1.04;
-                    cellCommission = rawInput - effectivePayment;
+                    const cellCommission = rawInput * 0.04;
                     totalCommission += cellCommission;
                     
                     if (!displayHelper) {
                         displayHelper = document.createElement('span');
-                        displayHelper.className = 'effective-val';
+                        displayHelper.className = 'effective-val commission-val';
                         inputElem.parentElement.appendChild(displayHelper);
                     }
-                    displayHelper.textContent = `Тіло: ${effectivePayment.toFixed(2)}`;
+                    displayHelper.textContent = `+${cellCommission.toFixed(2)} комісія`;
                 } else {
                      if (displayHelper) displayHelper.remove();
                 }
@@ -464,16 +462,11 @@
                 accumulatedInt += dailyInt;
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 
-                // VALIDATION: Cannot pay more than body
                 let maxAllowed = currentBody;
-                if (accumulatedInt > 0.001) maxAllowed = Math.max(0, currentBody - 0.01); // leave penny for interest logic if needed, but simplified here:
+                if (accumulatedInt > 0.001) maxAllowed = Math.max(0, currentBody - 0.01);
 
                 if (effectivePayment > currentBody) {
-                     // If user entered too much, we cap it. 
-                     // But complex reverse calc for credit. Simply cap effective payment to body.
-                     effectivePayment = currentBody;
-                     // Reverse calculate raw input for UI consistency? 
-                     // Or just warn. Let's just limit effective.
+                     effectivePayment = currentBody; 
                      inputElem.style.borderColor = "var(--color-error)";
                 } else {
                      inputElem.style.borderColor = "var(--color-border)";
@@ -486,26 +479,25 @@
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // FINAL PAYMENT SECTION LOGIC
+            // FINAL PAYMENT SECTION
             const totalDebt = currentBody + accumulatedInt;
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
             
             const totalPaymentInput = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
+            
+            // Logic: Input = Body/Interest Repayment
             let effectiveFinalPayment = totalPaymentInput;
             let finalCommission = 0;
 
             if (isCredit) {
-                effectiveFinalPayment = totalPaymentInput / 1.04;
-                finalCommission = totalPaymentInput - effectiveFinalPayment;
+                finalCommission = totalPaymentInput * 0.04;
             }
 
-            // Error check
             const errorMsg = document.getElementById('kdzError');
             if (effectiveFinalPayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
 
-            // Distribute final payment (Body -> Interest)
+            // Distribute
             let paymentForBody = 0; let paymentForInterest = 0;
-            
             if (effectiveFinalPayment >= currentBody) {
                 paymentForBody = currentBody;
                 const remainingMoney = effectiveFinalPayment - currentBody;
