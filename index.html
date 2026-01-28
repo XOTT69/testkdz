@@ -192,7 +192,7 @@
         }
         .remove-btn:hover { background-color: rgba(192, 21, 47, 0.1); color: rgba(192, 21, 47, 1); }
 
-        /* --- STYLES FOR KDZ INTERACTIVE TABLE --- */
+        /* --- COMPACT TABLE STYLES --- */
         .kdz-table-container {
             overflow-x: auto;
             border: 1px solid var(--color-border);
@@ -201,32 +201,34 @@
         }
         .kdz-table {
             width: 100%; border-collapse: collapse; min-width: 600px;
-            font-size: 14px;
+            font-size: 13px; /* Smaller font */
         }
         .kdz-table th {
             background-color: rgba(var(--color-teal-500-rgb), 0.08);
-            padding: 10px 12px;
+            padding: 8px 8px; /* Compact padding */
             text-align: left; font-weight: 600; color: var(--color-text);
             border-bottom: 1px solid var(--color-border);
         }
         .kdz-table td {
-            padding: 8px 12px;
+            padding: 4px 8px; /* Compact row padding */
             border-bottom: 1px solid var(--color-border);
             vertical-align: middle;
             color: var(--color-text);
+            height: 36px; /* Fixed small height */
         }
         .kdz-table tr:last-child td { border-bottom: none; }
         
         .kdz-input {
-            width: 100%; padding: 6px 8px;
-            font-size: 14px; text-align: right;
+            width: 100%; padding: 4px 6px; /* Compact input padding */
+            font-size: 13px; text-align: right;
             border: 1px solid var(--color-border);
-            border-radius: 6px;
+            border-radius: 4px;
+            height: 28px; /* Smaller height */
         }
-        .kdz-input:focus { border-color: var(--color-primary); }
+        .kdz-input:focus { border-color: var(--color-primary); outline: none; }
         .kdz-input::placeholder { color: #ccc; }
         
-        .text-dim { color: var(--color-text-secondary); font-size: 13px; }
+        .text-dim { color: var(--color-text-secondary); font-size: 12px; }
         .text-bold { font-weight: 600; }
         
         /* Payment Section Styles */
@@ -414,7 +416,7 @@
                     <table class="kdz-table" id="kdzTable">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 40px;">#</th>
+                                <th style="text-align: center; width: 30px;">#</th>
                                 <th>Тіло (ранок)</th>
                                 <th>Нарах. %</th>
                                 <th style="background-color: rgba(var(--color-brown-600-rgb), 0.04);">Погашення тіла</th>
@@ -595,7 +597,7 @@
             document.getElementById('resultInst').style.display = 'block';
         }
 
-        // === 3. KDZ INTERACTIVE LOGIC (SEPARATE INTEREST FIELD) ===
+        // === 3. KDZ INTERACTIVE LOGIC (COMPACT) ===
         
         function resetKdz() {
             const inputs = document.querySelectorAll('#kdzTbody input');
@@ -614,7 +616,7 @@
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-day', d);
                 tr.innerHTML = `
-                    <td style="text-align: center; color: var(--color-text-secondary); font-size: 13px;">${d}</td>
+                    <td style="text-align: center; color: var(--color-text-secondary); font-size: 12px;">${d}</td>
                     <td class="cell-body-start text-dim">0.00</td>
                     <td class="cell-int-daily text-dim">0.00</td>
                     
@@ -671,8 +673,7 @@
             // Remaining interest debt
             let remainingInt = accumulatedInt - payInterest;
             if(remainingInt < 0) remainingInt = 0; 
-            // Note: technically you can overpay interest, but for debt calc we stick to >= 0
-
+            
             // 3. Update Totals
             document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
             document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
