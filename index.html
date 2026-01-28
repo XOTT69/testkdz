@@ -256,9 +256,8 @@
                             <input type="number" id="kdzTotalPayInput" placeholder="0" oninput="recalculateKdz()">
                             <div id="kdzError" class="error-message">Сума перевищує борг!</div>
                         </div>
-                        <!-- Right Column: Checkbox (Aligned with Input) -->
+                        <!-- Right Column: Checkbox -->
                         <div class="form-group" style="margin-bottom: 0;">
-                            <!-- Spacer Label to push content down -->
                             <label style="opacity: 0;">Опція</label>
                             <div style="height: 36px; display: flex; align-items: center;">
                                 <label style="display: flex; align-items: center; cursor: pointer; margin: 0; font-weight: normal;">
@@ -455,23 +454,39 @@
             // FINAL PAYMENT
             const totalDebt = currentBody + accumulatedInt;
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
-            let totalPayment = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
+            
+            const totalPaymentInput = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
             const isCredit = document.getElementById('kdzIsCredit').checked;
+            
+            // Logic change: Separate effective payment and commission
+            let effectivePayment = totalPaymentInput;
+            let commission = 0;
+
+            if (isCredit) {
+                // If 1000 total, commission is included in that 1000? Or 1000 + 4%?
+                // Usually "from credit funds" means you pay 1040 to cover 1000 debt.
+                // But the input is "Total Payment Amount".
+                // Let's assume user inputs HOW MUCH they send. 
+                // So if they send 1000, 38.46 is comm, 961.54 is payment.
+                effectivePayment = totalPaymentInput / 1.04;
+                commission = totalPaymentInput - effectivePayment;
+            }
+
             const errorMsg = document.getElementById('kdzError');
-            if (totalPayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
+            if (effectivePayment > totalDebt + 0.01) errorMsg.classList.add('visible'); else errorMsg.classList.remove('visible');
 
             // PRIORITY: Body -> Interest
             let paymentForBody = 0; let paymentForInterest = 0;
-            if (totalPayment >= currentBody) {
+            if (effectivePayment >= currentBody) {
                 paymentForBody = currentBody;
-                const remainingMoney = totalPayment - currentBody;
+                const remainingMoney = effectivePayment - currentBody;
                 paymentForInterest = (remainingMoney >= accumulatedInt) ? accumulatedInt : remainingMoney;
             } else {
-                paymentForBody = totalPayment; paymentForInterest = 0;
+                paymentForBody = effectivePayment; paymentForInterest = 0;
             }
 
             const remainingBody = currentBody - paymentForBody;
-            const commission = isCredit ? totalPayment * 0.04 : 0;
+            
             document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
             document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
             document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
