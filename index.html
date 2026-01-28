@@ -112,6 +112,10 @@
         .effective-val { font-size: 10px; color: var(--color-text-secondary); display: block; line-height: 1; text-align: right; margin-top: 2px; }
         .commission-val { color: var(--color-error); }
         
+        /* New Checkbox Style for Table */
+        .checkbox-cell { text-align: center; }
+        .custom-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primary); }
+
         .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
         .error-message.visible { display: block; }
@@ -239,20 +243,18 @@
                     <div class="form-group" style="margin-bottom: 0;"><label>Днів (max 30)</label><input type="number" id="kdzDays" value="14" min="1" max="30" oninput="rebuildKdzTable()"></div>
                     <div class="form-group" style="margin-bottom: 0;"><label>Ставка/день</label><select id="kdzRate" onchange="recalculateKdz()"><option value="0.3">0.3%</option><option value="0.5">0.5%</option></select></div>
                 </div>
-                
-                <div class="form-group" style="margin-top: var(--space-md); margin-bottom: var(--space-md);">
-                     <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
-                        <input type="checkbox" id="kdzIsCredit" style="width: auto; margin-right: 8px;" onchange="recalculateKdz()"> 
-                        Оплата з кредитних коштів (+4% комісія)
-                    </label>
-                </div>
 
                 <div class="kdz-table-container">
                     <table class="kdz-table" id="kdzTable">
                         <thead>
                             <tr>
                                 <th style="text-align: center; width: 30px;">#</th>
-                                <th>Тіло (ранок)</th> <th>Нарах. %</th> <th style="background-color: rgba(94, 82, 64, 0.04);">Погашення тіла</th> <th>Тіло (вечір)</th> <th>Борг по %</th>
+                                <th>Тіло (ранок)</th> 
+                                <th>Нарах. %</th> 
+                                <th style="background-color: rgba(94, 82, 64, 0.04);">Погашення тіла</th>
+                                <th style="text-align: center; font-size: 10px; color: var(--color-text-secondary);">З кредитних?</th>
+                                <th>Тіло (вечір)</th> 
+                                <th>Борг по %</th>
                             </tr>
                         </thead>
                         <tbody id="kdzTbody"></tbody>
@@ -413,14 +415,21 @@
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
         // KDZ LOGIC
-        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.getElementById('kdzIsCredit').checked = false; recalculateKdz(); }
+        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.querySelectorAll('.is-credit-row').forEach(cb => cb.checked = false); recalculateKdz(); }
         function rebuildKdzTable() {
             let days = parseInt(document.getElementById('kdzDays').value) || 14;
             if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
             const tbody = document.getElementById('kdzTbody'); tbody.innerHTML = '';
             for (let d = 1; d <= days; d++) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td style="text-align: center; color: var(--color-text-secondary);">${d}</td><td class="cell-body-start text-dim">0.00</td><td class="cell-int-daily text-dim">0.00</td><td style="background-color: rgba(94, 82, 64, 0.02); position: relative;"><input type="number" class="kdz-input input-body" placeholder="0"></td><td class="cell-body-end text-bold">0.00</td><td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
+                tr.innerHTML = `
+                <td style="text-align: center; color: var(--color-text-secondary);">${d}</td>
+                <td class="cell-body-start text-dim">0.00</td>
+                <td class="cell-int-daily text-dim">0.00</td>
+                <td style="background-color: rgba(94, 82, 64, 0.02); position: relative;"><input type="number" class="kdz-input input-body" placeholder="0"></td>
+                <td class="checkbox-cell"><input type="checkbox" class="custom-checkbox is-credit-row" title="Сплачено з кредитних (+4%)"></td>
+                <td class="cell-body-end text-bold">0.00</td>
+                <td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
                 tbody.appendChild(tr);
             }
             recalculateKdz();
@@ -428,18 +437,20 @@
         function recalculateKdz() {
             const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
-            const isCredit = document.getElementById('kdzIsCredit').checked;
+            
             const rows = document.querySelectorAll('#kdzTbody tr');
             let currentBody = startBody; let accumulatedInt = 0;
             
             rows.forEach((row) => {
                 const inputElem = row.querySelector('.input-body');
-                let rawInput = parseFloat(inputElem.value) || 0;
+                const checkboxElem = row.querySelector('.is-credit-row');
                 
+                let rawInput = parseFloat(inputElem.value) || 0;
                 let effectivePayment = rawInput; 
                 let displayHelper = row.querySelector('.effective-val');
 
-                if (isCredit && rawInput > 0) {
+                // Logic based on per-row checkbox
+                if (checkboxElem.checked && rawInput > 0) {
                     const cellCommission = rawInput * 0.04;
                     if (!displayHelper) {
                         displayHelper = document.createElement('span');
@@ -478,6 +489,10 @@
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
+        document.getElementById('kdzTable').addEventListener('change', (e) => {
+            if (e.target.matches('.is-credit-row')) recalculateKdz();
+        });
+        
         addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals();
     </script>
 </body>
