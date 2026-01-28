@@ -60,7 +60,7 @@
         /* Compact Headers */
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; color: var(--color-text); }
         .subtitle { color: var(--color-text-secondary); margin-bottom: var(--space-lg); font-size: 13px; }
-        h2 { font-size: 18px; margin-bottom: var(--space-md); font-weight: 600; }
+        h2 { font-size: 18px; margin: 0; font-weight: 600; } /* Reset margin for flex headers */
         h3 { font-size: 15px; margin: var(--space-md) 0 var(--space-sm) 0; font-weight: 600; }
         
         /* Compact Tabs */
@@ -88,12 +88,21 @@
             margin-bottom: var(--space-lg);
         }
         
+        /* Uniform Card Header */
+        .card-header-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: var(--space-lg); /* Consistent spacing for all cards */
+            min-height: 32px;
+        }
+
         .form-group { margin-bottom: var(--space-md); }
         
         label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 13px; color: var(--color-text); }
         
         /* Compact Inputs */
-        input[type="number"], select {
+        input[type="number"], input[type="date"], select {
             width: 100%; padding: 6px 10px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-base);
@@ -102,8 +111,9 @@
             color: var(--color-text);
             transition: border-color 0.2s;
             height: 32px;
+            font-family: inherit;
         }
-        input[type="number"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
+        input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
         
         /* Compact Buttons */
         .btn {
@@ -252,7 +262,7 @@
             font-size: 13px; text-align: right;
             border: 1px solid var(--color-border);
             border-radius: 4px;
-            height: 26px; /* Ultra compact inputs in table */
+            height: 26px;
             margin: 0;
         }
         .kdz-input:focus { border-color: var(--color-primary); outline: none; }
@@ -273,12 +283,13 @@
 <body>
     <div class="container">
         <h1>🏦 Калькулятор monobank</h1>
-        <p class="subtitle">Розрахунок процентів за кредитним лімітом</p>
+        <!-- Dynamic subtitle -->
+        <p class="subtitle" id="mainSubtitle">Розрахунок процентів за кредитним лімітом</p>
         
         <div class="tabs">
-            <button class="tab active" data-tab="credit">Кредитний ліміт</button>
-            <button class="tab" data-tab="installment">Розстрочка</button>
-            <button class="tab" data-tab="kdz">КДЗ (Калькулятор)</button>
+            <button class="tab active" data-tab="credit" data-sub="Розрахунок процентів за кредитним лімітом">Кредитний ліміт</button>
+            <button class="tab" data-tab="installment" data-sub="Розрахунок платежів та комісій за розстрочкою">Розстрочка</button>
+            <button class="tab" data-tab="kdz" data-sub="Розрахунок вартості кредиту до зарплати">КДЗ (Калькулятор)</button>
         </div>
         
         <!-- ======================= -->
@@ -286,8 +297,8 @@
         <!-- ======================= -->
         <div class="tab-content active" id="credit">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
-                    <h2 style="margin: 0;">Кредитний ліміт</h2>
+                <div class="card-header-row">
+                    <h2>Кредитний ліміт</h2>
                     <label style="display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal;">
                         <input type="checkbox" id="leapYearCredit" style="width: auto;">
                         Високосний (366)
@@ -357,9 +368,16 @@
         <!-- ======================= -->
         <div class="tab-content" id="installment">
             <div class="card">
-                <h2 style="margin-bottom: var(--space-lg);">
-                    Розстрочка <span class="rate-badge">1.9%/міс</span>
-                </h2>
+                <!-- Uniform Header for Installment -->
+                <div class="card-header-row">
+                    <div style="display: flex; align-items: center;">
+                        <h2>Розстрочка</h2>
+                        <span class="rate-badge">1.9%/міс</span>
+                    </div>
+                    <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetInst()">
+                        🔄 Очистити
+                    </button>
+                </div>
                 
                 <div class="grid-2">
                     <div class="form-group">
@@ -392,6 +410,17 @@
                         <span class="result-label">Всього до сплати</span>
                         <span class="result-value" id="totalInstallment">0 грн</span>
                     </div>
+
+                    <!-- Installment Schedule Dropdown -->
+                    <div class="details-log-container">
+                        <button class="text-link" onclick="toggleDetailsInst()">📜 Показати графік платежів</button>
+                        <div id="detailsAreaInst" style="display: none;">
+                            <div class="details-log" id="detailsLogInst"></div>
+                            <div class="copy-btn-container">
+                                <button class="btn btn-outline" style="width: auto; height: 28px; padding: 0 12px; font-size: 12px;" onclick="copyDetailsInst()">Копіювати графік</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -401,9 +430,9 @@
         <!-- ======================= -->
         <div class="tab-content" id="kdz">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
-                    <h2 style="margin: 0;">Кредит «До завтра»</h2>
-                    <button class="btn btn-ghost" style="width: auto; margin: 0;" onclick="resetKdz()">
+                <div class="card-header-row">
+                    <h2>Кредит «До завтра»</h2>
+                    <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetKdz()">
                         🔄 Очистити
                     </button>
                 </div>
@@ -415,8 +444,8 @@
                         <input type="number" id="kdzBody" value="5000" oninput="rebuildKdzTable()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label>Днів</label>
-                        <input type="number" id="kdzDays" value="14" min="1" max="365" oninput="rebuildKdzTable()">
+                        <label>Днів (макс 30)</label>
+                        <input type="number" id="kdzDays" value="14" min="1" max="30" oninput="rebuildKdzTable()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Ставка/день</label>
@@ -492,7 +521,17 @@
     </div>
     
     <script>
-        // === LOGIC SAME AS BEFORE, JUST RENDER TWEAKS ===
+        // === HELPERS ===
+        function getTodayString() {
+            const d = new Date();
+            return d.toISOString().split('T')[0];
+        }
+        function formatDateDDMM(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${day}.${month}`;
+        }
+
         let periodCounter31 = 0;
         let periodCounter62 = 0;
         let periodCounterOverdraft = 0;
@@ -502,23 +541,31 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
+                
+                // Switch Content
                 const tabId = tab.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
+                
+                // Update Subtitle
+                const newSub = tab.getAttribute('data-sub');
+                document.getElementById('mainSubtitle').textContent = newSub;
+
                 if(tabId === 'kdz' && document.getElementById('kdzTbody').children.length === 0) rebuildKdzTable();
             });
         });
 
-        // CREDIT LIMIT
+        // CREDIT LIMIT - SEPARATE LOG SECTIONS
         function addPeriod31() {
             periodCounter31++;
+            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'period31-' + periodCounter31;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounter31}</span><button class="remove-btn" onclick="document.getElementById('period31-${periodCounter31}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="debt31-from" value="1"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="debt31-to" value="10"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="debt31-from" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="debt31-to" value="${today}"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="debt31-amount" value="25000"></div>
                 </div>`;
             document.getElementById('periods31').appendChild(div);
@@ -526,14 +573,15 @@
 
         function addPeriod62() {
             periodCounter62++;
+            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'period62-' + periodCounter62;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounter62}</span><button class="remove-btn" onclick="document.getElementById('period62-${periodCounter62}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="debt62-from" value="1"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="debt62-to" value="10"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="debt62-from" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="debt62-to" value="${today}"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="debt62-amount" value="25000"></div>
                 </div>`;
             document.getElementById('periods62').appendChild(div);
@@ -541,14 +589,15 @@
 
         function addPeriodOverdraft() {
             periodCounterOverdraft++;
+            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'periodOverdraft-' + periodCounterOverdraft;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounterOverdraft}</span><button class="remove-btn" onclick="document.getElementById('periodOverdraft-${periodCounterOverdraft}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="overdraft-from" value="1"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="overdraft-to" value="10"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="overdraft-from" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="overdraft-to" value="${today}"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="overdraft-amount" value="2000"></div>
                 </div>`;
             document.getElementById('periodsOverdraft').appendChild(div);
@@ -556,47 +605,73 @@
 
         function calculateCredit() {
             const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
-            let logText = "";
-            let overallDay = 0; // for continuous numbering in log
-
-            const calcGroup = (selector, rate) => {
+            
+            let log31 = "";
+            let log62 = "";
+            let logOd = "";
+            
+            const calcGroup = (selector, rate, logVar) => {
                 let total = 0;
+                let logText = "";
+                
                 document.querySelectorAll(selector).forEach(card => {
-                    const from = parseInt(card.querySelector('[class*="-from"]').value) || 0;
-                    const to = parseInt(card.querySelector('[class*="-to"]').value) || 0;
+                    const fromStr = card.querySelector('[class*="-from"]').value;
+                    const toStr = card.querySelector('[class*="-to"]').value;
                     const amt = parseFloat(card.querySelector('[class*="-amount"]').value) || 0;
-                    const days = to - from + 1;
                     
-                    if(days > 0) {
-                        // Per day calculation for log
-                        for(let i=0; i<days; i++) {
+                    if(fromStr && toStr) {
+                        const fromDate = new Date(fromStr);
+                        const toDate = new Date(toStr);
+                        
+                        let currentDate = new Date(fromDate);
+                        while (currentDate <= toDate) {
                             const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100;
-                            // Format: "Day: Amount x 1 x Rate% x 12 / 365 = Res"
-                            const dayNum = from + i; // using absolute day from input
-                            logText += `${dayNum}: ${amt.toFixed(2)} × 1 × ${rate}% × 12 / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
+                            const dateLabel = formatDateDDMM(currentDate);
+                            
+                            logText += `${dateLabel}: ${amt.toFixed(2)} × 1 × ${rate}% × 12 / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
+                            
                             total += dailyInterest;
+                            currentDate.setDate(currentDate.getDate() + 1);
                         }
                     }
                 });
-                return total;
+                return {total, logText};
             };
 
-            const i31 = calcGroup('#periods31 .period-card', 3.1);
-            const i62 = calcGroup('#periods62 .period-card', 6.2);
+            const res31 = calcGroup('#periods31 .period-card', 3.1);
+            const res62 = calcGroup('#periods62 .period-card', 6.2);
+            
             const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
-            const iOd = calcGroup('#periodsOverdraft .period-card', odRate);
+            const resOd = calcGroup('#periodsOverdraft .period-card', odRate);
 
-            document.getElementById('interest31').textContent = i31.toFixed(2) + ' грн';
-            document.getElementById('interest62').textContent = i62.toFixed(2) + ' грн';
-            document.getElementById('totalInterest').textContent = (i31 + i62).toFixed(2) + ' грн';
+            document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн';
             document.getElementById('appliedRate').textContent = odRate + '%';
-            document.getElementById('interestOverdraft').textContent = iOd.toFixed(2) + ' грн';
+            document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн';
             document.getElementById('resultCredit').style.display = 'block';
 
-            // Log update - sort by day number approximately or just append
-            // Note: Currently it appends groups in order of calculation. 
-            // If user enters periods 1-10 then 20-30, log is fine.
-            document.getElementById('detailsLogText').textContent = logText;
+            // Build consolidated log with sections
+            let fullLog = "";
+            
+            if(res31.logText) {
+                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 3.1% ===\n\n";
+                fullLog += res31.logText;
+                fullLog += "\n";
+            }
+            
+            if(res62.logText) {
+                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 6.2% ===\n\n";
+                fullLog += res62.logText;
+                fullLog += "\n";
+            }
+            
+            if(resOd.logText) {
+                fullLog += `=== ОВЕРДРАФТ (${odRate}%) ===\n\n`;
+                fullLog += resOd.logText;
+            }
+
+            document.getElementById('detailsLogText').textContent = fullLog;
         }
 
         function toggleDetails() {
@@ -618,83 +693,11 @@
             const mos = parseInt(document.getElementById('monthsInst').value) || 0;
             if (amt <= 0 || mos <= 0) return;
             const fee = amt * 0.019;
-            const monthly = (amt / mos) + fee;
+            const monthlyPrincipal = amt / mos;
+            const monthlyTotal = monthlyPrincipal + fee;
             const over = fee * mos;
-            document.getElementById('monthlyPayment').textContent = monthly.toFixed(2) + ' грн';
+            
+            document.getElementById('monthlyPayment').textContent = monthlyTotal.toFixed(2) + ' грн';
             document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн';
             document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн';
-            document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
-            document.getElementById('resultInst').style.display = 'block';
-        }
-
-        // KDZ COMPACT
-        function resetKdz() {
-            document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
-            document.getElementById('kdzPayInterest').value = '';
-            document.getElementById('kdzIsCredit').checked = false;
-            recalculateKdz();
-        }
-
-        function rebuildKdzTable() {
-            const days = parseInt(document.getElementById('kdzDays').value) || 14;
-            const tbody = document.getElementById('kdzTbody');
-            tbody.innerHTML = '';
-            for (let d = 1; d <= days; d++) {
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-day', d);
-                tr.innerHTML = `
-                    <td style="text-align: center; color: var(--color-text-secondary);">${d}</td>
-                    <td class="cell-body-start text-dim">0.00</td>
-                    <td class="cell-int-daily text-dim">0.00</td>
-                    <td style="background-color: rgba(94, 82, 64, 0.02);"><input type="number" class="kdz-input input-body" placeholder="0"></td>
-                    <td class="cell-body-end text-bold">0.00</td>
-                    <td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
-                tbody.appendChild(tr);
-            }
-            recalculateKdz();
-        }
-
-        function recalculateKdz() {
-            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
-            const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
-            const rows = document.querySelectorAll('#kdzTbody tr');
-            
-            let currentBody = startBody;
-            let accumulatedInt = 0;
-            let totalIntAccrued = 0;
-            
-            rows.forEach(row => {
-                const payBody = parseFloat(row.querySelector('.input-body').value) || 0;
-                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
-                
-                const dailyInt = currentBody * rate / 100;
-                totalIntAccrued += dailyInt;
-                accumulatedInt += dailyInt;
-                
-                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
-                
-                currentBody -= payBody;
-                if(currentBody < 0) currentBody = 0;
-                
-                row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
-                row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
-            });
-
-            const payInterest = parseFloat(document.getElementById('kdzPayInterest').value) || 0;
-            const isCredit = document.getElementById('kdzIsCredit').checked;
-            const commission = isCredit ? payInterest * 0.04 : 0;
-            let remainingInt = accumulatedInt - payInterest;
-            if(remainingInt < 0) remainingInt = 0; 
-            
-            document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
-            document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
-            document.getElementById('liveInterestPaid').textContent = payInterest.toFixed(2) + ' грн';
-            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
-            document.getElementById('liveTotalToPay').textContent = (currentBody + remainingInt).toFixed(2) + ' грн';
-        }
-
-        document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
-        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); 
-    </script>
-</body>
-</html>
+            document.getElementById('totalInstall
