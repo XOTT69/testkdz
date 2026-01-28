@@ -200,7 +200,7 @@
             margin-top: var(--space-20);
         }
         .kdz-table {
-            width: 100%; border-collapse: collapse; min-width: 700px;
+            width: 100%; border-collapse: collapse; min-width: 600px;
             font-size: 14px;
         }
         .kdz-table th {
@@ -218,23 +218,25 @@
         .kdz-table tr:last-child td { border-bottom: none; }
         
         .kdz-input {
-            width: 90px; padding: 6px 8px;
+            width: 100%; padding: 6px 8px;
             font-size: 14px; text-align: right;
             border: 1px solid var(--color-border);
             border-radius: 6px;
         }
         .kdz-input:focus { border-color: var(--color-primary); }
-        .kdz-input:disabled { background-color: rgba(0,0,0,0.03); border-color: transparent; color: transparent; cursor: not-allowed; }
         .kdz-input::placeholder { color: #ccc; }
-        
-        .kdz-checkbox-label {
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; cursor: pointer; color: var(--color-text-secondary);
-        }
-        .kdz-checkbox-label input { margin-right: 4px; width: 14px; height: 14px; }
         
         .text-dim { color: var(--color-text-secondary); font-size: 13px; }
         .text-bold { font-weight: 600; }
+        
+        /* Payment Section Styles */
+        .payment-section {
+            background-color: rgba(var(--color-teal-500-rgb), 0.04);
+            border: 1px solid rgba(var(--color-teal-500-rgb), 0.2);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            margin-top: var(--space-24);
+        }
         
     </style>
 </head>
@@ -402,28 +404,9 @@
                     </div>
                 </div>
 
-                <!-- Підсумки Live -->
-                <div class="result-section" style="margin-top: 0; margin-bottom: var(--space-24);">
-                    <div class="result-item">
-                        <span class="result-label">Залишок тіла</span>
-                        <span class="result-value highlight" id="liveBodyRemain">5000.00 грн</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Нараховані відсотки</span>
-                        <span class="result-value" id="liveInterestTotal">0.00 грн</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Комісія 4% (з кредитних)</span>
-                        <span class="result-value" id="liveCommission">0.00 грн</span>
-                    </div>
-                    <div class="result-item" style="border-top: 1px solid var(--color-border); padding-top: var(--space-12); margin-top: var(--space-8);">
-                        <span class="result-label" style="color: var(--color-text); font-weight: 500;">Разом до повного закриття зараз</span>
-                        <span class="result-value highlight" id="liveTotalToPay">0.00 грн</span>
-                    </div>
-                </div>
-
-                <div class="info-box" style="margin-top: 0;">
-                    👇 Тіло можна гасити щодня. Відсотки сплачуються тільки в останній день.
+                <!-- Інфо бокс -->
+                <div class="info-box" style="margin-top: 0; margin-bottom: var(--space-20);">
+                    👇 Вписуйте погашення тіла в таблицю. Відсотки сплачуються в блоці знизу.
                 </div>
 
                 <!-- Таблиця -->
@@ -434,9 +417,7 @@
                                 <th style="text-align: center; width: 40px;">#</th>
                                 <th>Тіло (ранок)</th>
                                 <th>Нарах. %</th>
-                                <th style="background-color: rgba(var(--color-teal-500-rgb), 0.04);">Погашення %</th>
                                 <th style="background-color: rgba(var(--color-brown-600-rgb), 0.04);">Погашення тіла</th>
-                                <th style="text-align: center;">Кредитні?</th>
                                 <th>Тіло (вечір)</th>
                                 <th>Борг по %</th>
                             </tr>
@@ -445,6 +426,47 @@
                             <!-- JS Generates Rows -->
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Окремий блок погашення відсотків -->
+                <div class="payment-section">
+                    <h3 style="font-size: 16px; margin-bottom: var(--space-12);">Фінальне погашення відсотків</h3>
+                    <div class="grid-2" style="align-items: end;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Сплачено відсотків (грн)</label>
+                            <input type="number" id="kdzPayInterest" placeholder="0" oninput="recalculateKdz()">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; display: flex; height: 100%; align-items: center;">
+                            <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="kdzIsCredit" style="width: auto; margin-right: 8px;" onchange="recalculateKdz()">
+                                За рахунок кредитних коштів (+4%)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Підсумки Live -->
+                <div class="result-section">
+                    <div class="result-item">
+                        <span class="result-label">Залишок тіла</span>
+                        <span class="result-value highlight" id="liveBodyRemain">5000.00 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Нараховані відсотки (Всього)</span>
+                        <span class="result-value" id="liveInterestTotal">0.00 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Сплачено відсотків</span>
+                        <span class="result-value" id="liveInterestPaid">0.00 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Комісія 4%</span>
+                        <span class="result-value" id="liveCommission">0.00 грн</span>
+                    </div>
+                    <div class="result-item" style="border-top: 1px solid var(--color-border); padding-top: var(--space-12); margin-top: var(--space-8);">
+                        <span class="result-label" style="color: var(--color-text); font-weight: 500;">Разом залишок боргу</span>
+                        <span class="result-value highlight" id="liveTotalToPay">0.00 грн</span>
+                    </div>
                 </div>
 
             </div>
@@ -573,14 +595,13 @@
             document.getElementById('resultInst').style.display = 'block';
         }
 
-        // === 3. KDZ INTERACTIVE LOGIC (FIXED & RESTRICTED) ===
+        // === 3. KDZ INTERACTIVE LOGIC (SEPARATE INTEREST FIELD) ===
         
         function resetKdz() {
             const inputs = document.querySelectorAll('#kdzTbody input');
-            inputs.forEach(inp => {
-                if(inp.type === 'checkbox') inp.checked = false;
-                else inp.value = '';
-            });
+            inputs.forEach(inp => inp.value = '');
+            document.getElementById('kdzPayInterest').value = '';
+            document.getElementById('kdzIsCredit').checked = false;
             recalculateKdz();
         }
 
@@ -590,9 +611,6 @@
             tbody.innerHTML = '';
             
             for (let d = 1; d <= days; d++) {
-                const isLast = (d === days);
-                const disabledAttr = isLast ? '' : 'disabled';
-                
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-day', d);
                 tr.innerHTML = `
@@ -600,18 +618,8 @@
                     <td class="cell-body-start text-dim">0.00</td>
                     <td class="cell-int-daily text-dim">0.00</td>
                     
-                    <td style="background-color: rgba(var(--color-teal-500-rgb), 0.02);">
-                        <input type="number" class="kdz-input input-int" placeholder="0" ${disabledAttr}>
-                    </td>
-                    
                     <td style="background-color: rgba(var(--color-brown-600-rgb), 0.02);">
                         <input type="number" class="kdz-input input-body" placeholder="0">
-                    </td>
-                    
-                    <td style="text-align: center;">
-                        <label class="kdz-checkbox-label" title="Оплата кредитними (+4% комісії)">
-                            <input type="checkbox" class="input-check" ${disabledAttr}>
-                        </label>
                     </td>
                     
                     <td class="cell-body-end text-bold">0.00</td>
@@ -630,58 +638,53 @@
             let currentBody = startBody;
             let accumulatedInt = 0;
             let totalIntAccrued = 0;
-            let totalCommission = 0;
             
+            // 1. Calculate schedule based on Body Payments
             rows.forEach(row => {
-                const inputInt = row.querySelector('.input-int');
                 const inputBody = row.querySelector('.input-body');
-                const inputCheck = row.querySelector('.input-check');
-                
-                // Read value (if disabled, usually it is empty, or user can't change it)
-                const payInt = parseFloat(inputInt.value) || 0;
                 const payBody = parseFloat(inputBody.value) || 0;
-                const isCredit = inputCheck.checked;
 
-                // Update Start Body
                 row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
                 
-                // Calc Interest
                 const dailyInt = currentBody * rate / 100;
                 totalIntAccrued += dailyInt;
                 accumulatedInt += dailyInt;
                 
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 
-                // Calc Commission
-                if (isCredit) {
-                    totalCommission += (payInt * 0.04);
-                }
-                
-                // Apply payments
-                accumulatedInt -= payInt;
-                if(accumulatedInt < 0) accumulatedInt = 0;
-                
                 currentBody -= payBody;
                 if(currentBody < 0) currentBody = 0;
                 
-                // Update End Cells
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
-                
-                const intCell = row.querySelector('.cell-int-accum');
-                intCell.textContent = accumulatedInt.toFixed(2);
-                intCell.style.color = accumulatedInt > 0.01 ? '#c62828' : '#2e7d32';
+                row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
+
+            // 2. Handle Interest Payment (Separate Field)
+            const payInterest = parseFloat(document.getElementById('kdzPayInterest').value) || 0;
+            const isCredit = document.getElementById('kdzIsCredit').checked;
             
+            let commission = 0;
+            if(isCredit) {
+                commission = payInterest * 0.04;
+            }
+
+            // Remaining interest debt
+            let remainingInt = accumulatedInt - payInterest;
+            if(remainingInt < 0) remainingInt = 0; 
+            // Note: technically you can overpay interest, but for debt calc we stick to >= 0
+
+            // 3. Update Totals
             document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
             document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
-            document.getElementById('liveCommission').textContent = totalCommission.toFixed(2) + ' грн';
+            document.getElementById('liveInterestPaid').textContent = payInterest.toFixed(2) + ' грн';
+            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
             
-            const totalToPay = currentBody + accumulatedInt;
+            // Total debt = Remaining Body + Remaining Interest
+            const totalToPay = currentBody + remainingInt;
             document.getElementById('liveTotalToPay').textContent = totalToPay.toFixed(2) + ' грн';
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
-        document.getElementById('kdzTable').addEventListener('change', recalculateKdz);
 
         addPeriod31();
         addPeriod62();
