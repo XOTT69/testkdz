@@ -93,7 +93,7 @@
         label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 13px; color: var(--color-text); }
         
         /* Compact Inputs */
-        input[type="number"], input[type="date"], select {
+        input[type="number"], select {
             width: 100%; padding: 6px 10px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-base);
@@ -102,9 +102,8 @@
             color: var(--color-text);
             transition: border-color 0.2s;
             height: 32px;
-            font-family: inherit;
         }
-        input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
+        input[type="number"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
         
         /* Compact Buttons */
         .btn {
@@ -253,7 +252,7 @@
             font-size: 13px; text-align: right;
             border: 1px solid var(--color-border);
             border-radius: 4px;
-            height: 26px;
+            height: 26px; /* Ultra compact inputs in table */
             margin: 0;
         }
         .kdz-input:focus { border-color: var(--color-primary); outline: none; }
@@ -493,17 +492,7 @@
     </div>
     
     <script>
-        // === HELPERS ===
-        function getTodayString() {
-            const d = new Date();
-            return d.toISOString().split('T')[0];
-        }
-        function formatDateDDMM(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            return `${day}.${month}`;
-        }
-
+        // === LOGIC SAME AS BEFORE, JUST RENDER TWEAKS ===
         let periodCounter31 = 0;
         let periodCounter62 = 0;
         let periodCounterOverdraft = 0;
@@ -519,18 +508,17 @@
             });
         });
 
-        // CREDIT LIMIT - SEPARATE LOG SECTIONS
+        // CREDIT LIMIT
         function addPeriod31() {
             periodCounter31++;
-            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'period31-' + periodCounter31;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounter31}</span><button class="remove-btn" onclick="document.getElementById('period31-${periodCounter31}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="debt31-from" value="${today}"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="debt31-to" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="debt31-from" value="1"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="debt31-to" value="10"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="debt31-amount" value="25000"></div>
                 </div>`;
             document.getElementById('periods31').appendChild(div);
@@ -538,15 +526,14 @@
 
         function addPeriod62() {
             periodCounter62++;
-            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'period62-' + periodCounter62;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounter62}</span><button class="remove-btn" onclick="document.getElementById('period62-${periodCounter62}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="debt62-from" value="${today}"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="debt62-to" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="debt62-from" value="1"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="debt62-to" value="10"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="debt62-amount" value="25000"></div>
                 </div>`;
             document.getElementById('periods62').appendChild(div);
@@ -554,15 +541,14 @@
 
         function addPeriodOverdraft() {
             periodCounterOverdraft++;
-            const today = getTodayString();
             const div = document.createElement('div');
             div.className = 'period-card';
             div.id = 'periodOverdraft-' + periodCounterOverdraft;
             div.innerHTML = `
                 <div class="period-header"><span class="period-title">Період ${periodCounterOverdraft}</span><button class="remove-btn" onclick="document.getElementById('periodOverdraft-${periodCounterOverdraft}').remove()">×</button></div>
                 <div class="grid-3">
-                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="overdraft-from" value="${today}"></div>
-                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="overdraft-to" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>З</label><input type="number" class="overdraft-from" value="1"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>По</label><input type="number" class="overdraft-to" value="10"></div>
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="overdraft-amount" value="2000"></div>
                 </div>`;
             document.getElementById('periodsOverdraft').appendChild(div);
@@ -570,73 +556,47 @@
 
         function calculateCredit() {
             const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
-            
-            let log31 = "";
-            let log62 = "";
-            let logOd = "";
-            
-            const calcGroup = (selector, rate, logVar) => {
+            let logText = "";
+            let overallDay = 0; // for continuous numbering in log
+
+            const calcGroup = (selector, rate) => {
                 let total = 0;
-                let logText = "";
-                
                 document.querySelectorAll(selector).forEach(card => {
-                    const fromStr = card.querySelector('[class*="-from"]').value;
-                    const toStr = card.querySelector('[class*="-to"]').value;
+                    const from = parseInt(card.querySelector('[class*="-from"]').value) || 0;
+                    const to = parseInt(card.querySelector('[class*="-to"]').value) || 0;
                     const amt = parseFloat(card.querySelector('[class*="-amount"]').value) || 0;
+                    const days = to - from + 1;
                     
-                    if(fromStr && toStr) {
-                        const fromDate = new Date(fromStr);
-                        const toDate = new Date(toStr);
-                        
-                        let currentDate = new Date(fromDate);
-                        while (currentDate <= toDate) {
+                    if(days > 0) {
+                        // Per day calculation for log
+                        for(let i=0; i<days; i++) {
                             const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100;
-                            const dateLabel = formatDateDDMM(currentDate);
-                            
-                            logText += `${dateLabel}: ${amt.toFixed(2)} × 1 × ${rate}% × 12 / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
-                            
+                            // Format: "Day: Amount x 1 x Rate% x 12 / 365 = Res"
+                            const dayNum = from + i; // using absolute day from input
+                            logText += `${dayNum}: ${amt.toFixed(2)} × 1 × ${rate}% × 12 / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
                             total += dailyInterest;
-                            currentDate.setDate(currentDate.getDate() + 1);
                         }
                     }
                 });
-                return {total, logText};
+                return total;
             };
 
-            const res31 = calcGroup('#periods31 .period-card', 3.1);
-            const res62 = calcGroup('#periods62 .period-card', 6.2);
-            
+            const i31 = calcGroup('#periods31 .period-card', 3.1);
+            const i62 = calcGroup('#periods62 .period-card', 6.2);
             const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
-            const resOd = calcGroup('#periodsOverdraft .period-card', odRate);
+            const iOd = calcGroup('#periodsOverdraft .period-card', odRate);
 
-            document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн';
-            document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн';
-            document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн';
+            document.getElementById('interest31').textContent = i31.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = i62.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (i31 + i62).toFixed(2) + ' грн';
             document.getElementById('appliedRate').textContent = odRate + '%';
-            document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн';
+            document.getElementById('interestOverdraft').textContent = iOd.toFixed(2) + ' грн';
             document.getElementById('resultCredit').style.display = 'block';
 
-            // Build consolidated log with sections
-            let fullLog = "";
-            
-            if(res31.logText) {
-                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 3.1% ===\n\n";
-                fullLog += res31.logText;
-                fullLog += "\n";
-            }
-            
-            if(res62.logText) {
-                fullLog += "=== ВІДСОТКИ ЗА КРЕДИТНИМ ЛІМІТОМ 6.2% ===\n\n";
-                fullLog += res62.logText;
-                fullLog += "\n";
-            }
-            
-            if(resOd.logText) {
-                fullLog += `=== ОВЕРДРАФТ (${odRate}%) ===\n\n`;
-                fullLog += resOd.logText;
-            }
-
-            document.getElementById('detailsLogText').textContent = fullLog;
+            // Log update - sort by day number approximately or just append
+            // Note: Currently it appends groups in order of calculation. 
+            // If user enters periods 1-10 then 20-30, log is fine.
+            document.getElementById('detailsLogText').textContent = logText;
         }
 
         function toggleDetails() {
