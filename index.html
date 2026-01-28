@@ -196,7 +196,6 @@
             <button class="tab" data-tab="kdz" data-sub="Розрахунок вартості кредиту до зарплати">КДЗ (Калькулятор)</button>
         </div>
         
-        <!-- ... (Credit Limit and Installment sections remain unchanged) ... -->
         <!-- ======================= -->
         <!-- 1. КРЕДИТНИЙ ЛІМІТ      -->
         <!-- ======================= -->
@@ -443,23 +442,129 @@
             });
         });
 
-        // CREDIT & INSTALLMENT JS (Hidden for brevity, same as before) ...
+        // CREDIT LOGIC
         function addPeriod31() { periodCounter31++; createPeriod('periods31', 'period31', periodCounter31, 25000); }
         function addPeriod62() { periodCounter62++; createPeriod('periods62', 'period62', periodCounter62, 25000); }
         function addPeriodOverdraft() { periodCounterOverdraft++; createPeriod('periodsOverdraft', 'periodOverdraft', periodCounterOverdraft, 2000); }
-        function createPeriod(containerId, prefix, count, defaultAmt) { const today = getTodayString(); const div = document.createElement('div'); div.className = 'period-card'; div.id = prefix + '-' + count; div.innerHTML = `<div class="period-header"><span class="period-title">Період ${count}</span><button class="remove-btn" onclick="document.getElementById('${prefix}-${count}').remove()">×</button></div><div class="grid-3"><div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="${prefix}-from" value="${today}"></div><div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="${prefix}-to" value="${today}"></div><div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="${prefix}-amount" value="${defaultAmt}"></div></div>`; document.getElementById(containerId).appendChild(div); }
-        function resetCredit() { document.getElementById('periods31').innerHTML = ''; document.getElementById('periods62').innerHTML = ''; document.getElementById('periodsOverdraft').innerHTML = ''; periodCounter31 = 0; periodCounter62 = 0; periodCounterOverdraft = 0; addPeriod31(); addPeriod62(); addPeriodOverdraft(); document.getElementById('leapYearCredit').checked = false; document.querySelector('input[name="overdraftRange"][value="less"]').checked = true; document.getElementById('resultCredit').style.display = 'none'; }
-        function calculateCredit() { const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365; let log31 = "", log62 = "", logOd = ""; const calcGroup = (selector, rate) => { let total = 0, logText = ""; document.querySelectorAll(selector).forEach(card => { const fromStr = card.querySelector('input[type="date"]:nth-of-type(1)').value; const toStr = card.querySelector('input[type="date"]:nth-of-type(2)').value; const amt = parseFloat(card.querySelector('input[type="number"]').value) || 0; if(fromStr && toStr) { const fromDate = new Date(fromStr); const toDate = new Date(toStr); let currentDate = new Date(fromDate); while (currentDate <= toDate) { const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100; logText += `${formatDateDDMM(currentDate)}: ${amt.toFixed(2)} × ${rate}% / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`; total += dailyInterest; currentDate.setDate(currentDate.getDate() + 1); } } }); return {total, logText}; }; const res31 = calcGroup('#periods31 .period-card', 3.1); const res62 = calcGroup('#periods62 .period-card', 6.2); const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1; const resOd = calcGroup('#periodsOverdraft .period-card', odRate); document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн'; document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн'; document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн'; document.getElementById('appliedRate').textContent = odRate + '%'; document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн'; document.getElementById('resultCredit').style.display = 'block'; let fullLog = ""; if(res31.logText) fullLog += "=== 3.1% ===\n" + res31.logText + "\n"; if(res62.logText) fullLog += "=== 6.2% ===\n" + res62.logText + "\n"; if(resOd.logText) fullLog += `=== ОВЕРДРАФТ ${odRate}% ===\n` + resOd.logText; document.getElementById('detailsLogText').textContent = fullLog; }
+        
+        function createPeriod(containerId, prefix, count, defaultAmt) {
+            const today = getTodayString();
+            const div = document.createElement('div');
+            div.className = 'period-card';
+            div.id = prefix + '-' + count;
+            div.innerHTML = `
+                <div class="period-header"><span class="period-title">Період ${count}</span><button class="remove-btn" onclick="document.getElementById('${prefix}-${count}').remove()">×</button></div>
+                <div class="grid-3">
+                    <div class="form-group" style="margin-bottom:0"><label>Дата з</label><input type="date" class="${prefix}-from" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>по</label><input type="date" class="${prefix}-to" value="${today}"></div>
+                    <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="${prefix}-amount" value="${defaultAmt}"></div>
+                </div>`;
+            document.getElementById(containerId).appendChild(div);
+        }
+
+        function resetCredit() {
+            document.getElementById('periods31').innerHTML = ''; document.getElementById('periods62').innerHTML = ''; document.getElementById('periodsOverdraft').innerHTML = '';
+            periodCounter31 = 0; periodCounter62 = 0; periodCounterOverdraft = 0;
+            addPeriod31(); addPeriod62(); addPeriodOverdraft();
+            document.getElementById('leapYearCredit').checked = false;
+            document.querySelector('input[name="overdraftRange"][value="less"]').checked = true;
+            document.getElementById('resultCredit').style.display = 'none';
+        }
+
+        function calculateCredit() {
+            const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
+            let log31 = "", log62 = "", logOd = "";
+            
+            const calcGroup = (selector, rate) => {
+                let total = 0, logText = "";
+                document.querySelectorAll(selector).forEach(card => {
+                    const fromStr = card.querySelector('input[type="date"]:nth-of-type(1)').value;
+                    const toStr = card.querySelector('input[type="date"]:nth-of-type(2)').value;
+                    const amt = parseFloat(card.querySelector('input[type="number"]').value) || 0;
+                    if(fromStr && toStr) {
+                        const fromDate = new Date(fromStr); const toDate = new Date(toStr);
+                        let currentDate = new Date(fromDate);
+                        while (currentDate <= toDate) {
+                            const dailyInterest = (amt * 1 * rate * 12) / daysInYear / 100;
+                            logText += `${formatDateDDMM(currentDate)}: ${amt.toFixed(2)} × ${rate}% / ${daysInYear} = ${dailyInterest.toFixed(2)} грн\n`;
+                            total += dailyInterest; currentDate.setDate(currentDate.getDate() + 1);
+                        }
+                    }
+                });
+                return {total, logText};
+            };
+
+            const res31 = calcGroup('#periods31 .period-card', 3.1);
+            const res62 = calcGroup('#periods62 .period-card', 6.2);
+            const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
+            const resOd = calcGroup('#periodsOverdraft .period-card', odRate);
+
+            document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн';
+            document.getElementById('appliedRate').textContent = odRate + '%';
+            document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн';
+            document.getElementById('resultCredit').style.display = 'block';
+
+            let fullLog = "";
+            if(res31.logText) fullLog += "=== 3.1% ===\n" + res31.logText + "\n";
+            if(res62.logText) fullLog += "=== 6.2% ===\n" + res62.logText + "\n";
+            if(resOd.logText) fullLog += `=== ОВЕРДРАФТ ${odRate}% ===\n` + resOd.logText;
+            document.getElementById('detailsLogText').textContent = fullLog;
+        }
+
         function toggleDetails() { const el = document.getElementById('detailsArea'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
         function copyDetails() { navigator.clipboard.writeText(document.getElementById('detailsLogText').textContent).then(() => alert('Copied!')); }
-        function updateSliderVisuals() { const slider = document.getElementById('monthsInst'); document.getElementById('monthsDisplay').textContent = slider.value; const percentage = ((slider.value - slider.min) / (slider.max - slider.min)) * 100; slider.style.background = `linear-gradient(to right, #ea5b5b 0%, #ea5b5b ${percentage}%, #e6e6e6 ${percentage}%, #e6e6e6 100%)`; if(document.getElementById('resultInst').style.display === 'block') calculateInstallment(); }
-        function liveUpdateInst() { const input = document.getElementById('amountInst'); const errorMsg = document.getElementById('instError'); if (parseFloat(input.value) > 400000) { input.value = 400000; errorMsg.classList.add('visible'); } else { errorMsg.classList.remove('visible'); } if(document.getElementById('resultInst').style.display === 'block') calculateInstallment(); }
-        function calculateInstallment() { let amt = parseFloat(document.getElementById('amountInst').value) || 0; if (amt > 400000) amt = 400000; const mos = parseInt(document.getElementById('monthsInst').value) || 0; if (amt <= 0 || mos <= 0) return; const fee = amt * 0.019; const monthlyPrincipal = amt / mos; const monthlyTotal = monthlyPrincipal + fee; const over = fee * mos; document.getElementById('monthlyPayment').textContent = monthlyTotal.toFixed(2) + ' грн'; document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн'; document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн'; document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн'; document.getElementById('resultInst').style.display = 'block'; let logText = `СУМА: ${amt.toFixed(2)} грн | ТЕРМІН: ${mos} міс\n`; for (let i = 1; i <= mos; i++) logText += `Місяць ${i}: ${monthlyTotal.toFixed(2)} грн\n`; logText += `\nЗАГАЛОМ: ${(amt + over).toFixed(2)} грн`; document.getElementById('detailsLogInst').textContent = logText; }
+
+        // INSTALLMENT
+        function updateSliderVisuals() {
+            const slider = document.getElementById('monthsInst');
+            document.getElementById('monthsDisplay').textContent = slider.value;
+            const percentage = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+            slider.style.background = `linear-gradient(to right, #ea5b5b 0%, #ea5b5b ${percentage}%, #e6e6e6 ${percentage}%, #e6e6e6 100%)`;
+            if(document.getElementById('resultInst').style.display === 'block') calculateInstallment();
+        }
+        
+        function liveUpdateInst() {
+            const input = document.getElementById('amountInst');
+            const errorMsg = document.getElementById('instError');
+            if (parseFloat(input.value) > 400000) {
+                input.value = 400000;
+                errorMsg.classList.add('visible');
+            } else {
+                errorMsg.classList.remove('visible');
+            }
+            if(document.getElementById('resultInst').style.display === 'block') calculateInstallment();
+        }
+
+        function calculateInstallment() {
+            let amt = parseFloat(document.getElementById('amountInst').value) || 0;
+            if (amt > 400000) amt = 400000;
+            const mos = parseInt(document.getElementById('monthsInst').value) || 0;
+            if (amt <= 0 || mos <= 0) return;
+            
+            const fee = amt * 0.019;
+            const monthlyPrincipal = amt / mos;
+            const monthlyTotal = monthlyPrincipal + fee;
+            const over = fee * mos;
+            
+            document.getElementById('monthlyPayment').textContent = monthlyTotal.toFixed(2) + ' грн';
+            document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн';
+            document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн';
+            document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
+            document.getElementById('resultInst').style.display = 'block';
+
+            let logText = `СУМА: ${amt.toFixed(2)} грн | ТЕРМІН: ${mos} міс\n`;
+            for (let i = 1; i <= mos; i++) logText += `Місяць ${i}: ${monthlyTotal.toFixed(2)} грн\n`;
+            logText += `\nЗАГАЛОМ: ${(amt + over).toFixed(2)} грн`;
+            document.getElementById('detailsLogInst').textContent = logText;
+        }
+
         function toggleDetailsInst() { const el = document.getElementById('detailsAreaInst'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
         function copyDetailsInst() { navigator.clipboard.writeText(document.getElementById('detailsLogInst').textContent).then(() => alert('Copied!')); }
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
-        // === KDZ LOGIC (FIXED) ===
+        // === KDZ LOGIC WITH TABLE LIMITER ===
         function resetKdz() {
             document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
             document.getElementById('kdzTotalPayInput').value = '';
@@ -487,90 +592,4 @@
         }
 
         function recalculateKdz() {
-            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
-            const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
-            const rows = document.querySelectorAll('#kdzTbody tr');
-            const totalRows = rows.length;
-            
-            let currentBody = startBody;
-            let accumulatedInt = 0;
-            
-            // 1. Table Loop
-            rows.forEach((row, index) => {
-                const isLastDay = (index === totalRows - 1);
-                let payInput = parseFloat(row.querySelector('.input-body').value) || 0;
-                const inputElem = row.querySelector('.input-body');
-
-                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
-                
-                // Interest accrual
-                const dailyInt = currentBody * rate / 100;
-                accumulatedInt += dailyInt;
-                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
-                
-                // --- TABLE PAYMENT LOGIC ---
-                // Intermediate: Pays Body Only. 
-                // Last Day: Pays Body Only (User types in "Body Payment" column).
-                // But we must validate sum <= Debt logic visually.
-                
-                // Apply payment to Body
-                currentBody -= payInput;
-                if(currentBody < 0) currentBody = 0;
-                
-                row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
-                row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
-            });
-
-            // 2. Final Settlement / "Total Payment" Field Logic
-            const totalDebt = currentBody + accumulatedInt;
-            document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
-
-            let totalPayment = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
-            const isCredit = document.getElementById('kdzIsCredit').checked;
-            const errorMsg = document.getElementById('kdzError');
-
-            // --- VALIDATION: Sum cannot exceed total debt ---
-            if (totalPayment > totalDebt + 0.01) { 
-                errorMsg.classList.add('visible');
-            } else {
-                errorMsg.classList.remove('visible');
-            }
-
-            // --- PAYMENT DISTRIBUTION ---
-            let paymentForInterest = 0;
-            let paymentForBody = 0;
-
-            // Rule: "Interest is paid in 2 cases: Full Repayment OR Last Day"
-            // The "Total Payment" field effectively acts as a settlement "Today" (at the end of the timeline).
-            // Since the timeline ends on the Last Day, this payment follows Last Day logic: Interest First.
-            
-            // Wait, does "Last Day" mean row N? Yes. 
-            // The bottom field is "Additional Payment" or "Total Settlement"? 
-            // It's labeled "Full Repayment". 
-            // If I pay PARTIAL here, does it pay interest?
-            // "Case 2: Last Day". Yes, if we are at end of term, interest is due.
-            // So logic: Priority to Interest.
-            
-            if (totalPayment >= accumulatedInt) {
-                paymentForInterest = accumulatedInt;
-                paymentForBody = totalPayment - accumulatedInt;
-                if (paymentForBody > currentBody) paymentForBody = currentBody;
-            } else {
-                paymentForInterest = totalPayment;
-                paymentForBody = 0;
-            }
-
-            const remainingBody = currentBody - paymentForBody;
-            const commission = isCredit ? totalPayment * 0.04 : 0;
-
-            document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
-            document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
-            document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
-            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
-        }
-
-        document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
-        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals();
-    </script>
-</body>
-</html>
+            const startBody = parseFloat(document.getElementById('kdzBody').value
