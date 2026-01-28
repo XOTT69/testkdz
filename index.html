@@ -46,7 +46,7 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* FIX JUMPING HEADER: Always show scrollbar */
+        /* FIX JUMPING HEADER */
         html { overflow-y: scroll; }
 
         body {
@@ -64,7 +64,6 @@
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; color: var(--color-text); }
         .subtitle { color: var(--color-text-secondary); margin-bottom: var(--space-lg); font-size: 13px; }
         
-        /* H2 Unified Style - Flexbox for badge alignment */
         h2 { 
             font-size: 18px; 
             margin: 0; 
@@ -100,7 +99,6 @@
             margin-bottom: var(--space-lg);
         }
         
-        /* Unified Card Header Row */
         .card-header-row {
             display: flex; 
             justify-content: space-between; 
@@ -295,12 +293,12 @@
 <body>
     <div class="container">
         <h1>🏦 Калькулятор monobank</h1>
-        <p class="subtitle">Розрахунок вартості користування кредитними коштами</p>
+        <p class="subtitle" id="mainSubtitle">Розрахунок процентів за кредитним лімітом</p>
         
         <div class="tabs">
-            <button class="tab active" data-tab="credit">Кредитний ліміт</button>
-            <button class="tab" data-tab="installment">Розстрочка</button>
-            <button class="tab" data-tab="kdz">КДЗ (Калькулятор)</button>
+            <button class="tab active" data-tab="credit" data-sub="Розрахунок процентів за кредитним лімітом">Кредитний ліміт</button>
+            <button class="tab" data-tab="installment" data-sub="Розрахунок щомісячних платежів та комісії">Розстрочка</button>
+            <button class="tab" data-tab="kdz" data-sub="Розрахунок вартості кредиту до зарплати">КДЗ (Калькулятор)</button>
         </div>
         
         <!-- ======================= -->
@@ -310,10 +308,16 @@
             <div class="card">
                 <div class="card-header-row">
                     <h2>Кредитний ліміт</h2>
-                    <label style="display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal;">
-                        <input type="checkbox" id="leapYearCredit" style="width: auto;">
-                        Високосний (366)
-                    </label>
+                    
+                    <div style="display: flex; gap: var(--space-md); align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; cursor: pointer;">
+                            <input type="checkbox" id="leapYearCredit" style="width: auto;">
+                            366 днів
+                        </label>
+                        <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetCredit()">
+                            🔄 Очистити
+                        </button>
+                    </div>
                 </div>
                 
                 <h3>Ставка 3.1%</h3>
@@ -555,7 +559,8 @@
                 const tabId = tab.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
                 
-                // No subtitle change, fixed as requested
+                // Update Subtitle dynamically
+                document.getElementById('mainSubtitle').textContent = tab.getAttribute('data-sub');
 
                 if(tabId === 'kdz' && document.getElementById('kdzTbody').children.length === 0) rebuildKdzTable();
             });
@@ -608,6 +613,30 @@
                     <div class="form-group" style="margin-bottom:0"><label>Сума</label><input type="number" class="overdraft-amount" value="2000"></div>
                 </div>`;
             document.getElementById('periodsOverdraft').appendChild(div);
+        }
+        
+        function resetCredit() {
+            // Clear containers
+            document.getElementById('periods31').innerHTML = '';
+            document.getElementById('periods62').innerHTML = '';
+            document.getElementById('periodsOverdraft').innerHTML = '';
+            
+            // Reset counters
+            periodCounter31 = 0; 
+            periodCounter62 = 0; 
+            periodCounterOverdraft = 0;
+            
+            // Add initial empty rows
+            addPeriod31(); 
+            addPeriod62(); 
+            addPeriodOverdraft();
+            
+            // Reset options
+            document.getElementById('leapYearCredit').checked = false;
+            document.querySelector('input[name="overdraftRange"][value="less"]').checked = true;
+            
+            // Hide results
+            document.getElementById('resultCredit').style.display = 'none';
         }
 
         function calculateCredit() {
