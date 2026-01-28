@@ -217,7 +217,6 @@
         }
         .kdz-table tr:last-child td { border-bottom: none; }
         
-        /* Interactive Inputs inside Table */
         .kdz-input {
             width: 90px; padding: 6px 8px;
             font-size: 14px; text-align: right;
@@ -233,7 +232,6 @@
         }
         .kdz-checkbox-label input { margin-right: 4px; width: 14px; height: 14px; }
         
-        .kdz-row-active { background-color: rgba(var(--color-teal-500-rgb), 0.03); }
         .text-dim { color: var(--color-text-secondary); font-size: 13px; }
         .text-bold { font-weight: 600; }
         
@@ -388,15 +386,15 @@
                 <div class="grid-3" style="align-items: flex-end; margin-bottom: var(--space-24);">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Тіло кредиту (грн)</label>
-                        <input type="number" id="kdzBody" value="5000" oninput="initKdzTable()">
+                        <input type="number" id="kdzBody" value="5000" oninput="rebuildKdzTable()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Кількість днів</label>
-                        <input type="number" id="kdzDays" value="14" min="1" max="365" oninput="initKdzTable()">
+                        <input type="number" id="kdzDays" value="14" min="1" max="365" oninput="rebuildKdzTable()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Ставка на день</label>
-                        <select id="kdzRate" onchange="initKdzTable()">
+                        <select id="kdzRate" onchange="recalculateKdz()">
                             <option value="0.3">0.3% на день</option>
                             <option value="0.5">0.5% на день</option>
                         </select>
@@ -442,7 +440,7 @@
                                 <th>Борг по %</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="kdzTbody">
                             <!-- JS Generates Rows -->
                         </tbody>
                     </table>
@@ -467,8 +465,10 @@
                 const tabId = tab.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
                 
-                // If KDZ tab is opened, ensure table is rendered
-                if(tabId === 'kdz') initKdzTable();
+                if(tabId === 'kdz') {
+                    // Only rebuild if empty
+                    if(document.getElementById('kdzTbody').children.length === 0) rebuildKdzTable();
+                }
             });
         });
 
@@ -533,8 +533,6 @@
             const calcGroup = (selector, rate) => {
                 let total = 0;
                 document.querySelectorAll(selector).forEach(card => {
-                    const f = parseInt(card.querySelector('input:nth-child(2)').value)||0; // hacky selector, stick to class in prod
-                    // let's use proper class selection inside function to be safe
                     const from = parseInt(card.querySelector('[class*="-from"]').value) || 0;
                     const to = parseInt(card.querySelector('[class*="-to"]').value) || 0;
                     const amt = parseFloat(card.querySelector('[class*="-amount"]').value) || 0;
@@ -575,91 +573,106 @@
             document.getElementById('resultInst').style.display = 'block';
         }
 
-        // === 3. KDZ INTERACTIVE LOGIC ===
+        // === 3. KDZ INTERACTIVE LOGIC (FIXED) ===
         
-        // State storage: { dayIndex: { int: 0, body: 0, isCredit: false } }
-        let kdzData = {};
-
         function resetKdz() {
-            kdzData = {};
-            initKdzTable();
+            // clear inputs
+            const inputs = document.querySelectorAll('#kdzTbody input');
+            inputs.forEach(inp => {
+                if(inp.type === 'checkbox') inp.checked = false;
+                else inp.value = '';
+            });
+            recalculateKdz();
         }
 
-        function initKdzTable() {
+        // Rebuilds the HTML rows of the table (only on Days/Body change)
+        function rebuildKdzTable() {
             const days = parseInt(document.getElementById('kdzDays').value) || 14;
+            const tbody = document.getElementById('kdzTbody');
+            tbody.innerHTML = '';
+            
+            for (let d = 1; d <= days; d++) {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-day', d);
+                tr.innerHTML = `
+                    <td style="text-align: center; color: var(--color-text-secondary); font-size: 13px;">${d}</td>
+                    <td class="cell-body-start text-dim">0.00</td>
+                    <td class="cell-int-daily text-dim">0.00</td>
+                    
+                    <td style="background-color: rgba(var(--color-teal-500-rgb), 0.02);">
+                        <input type="number" class="kdz-input input-int" placeholder="0">
+                    </td>
+                    
+                    <td style="background-color: rgba(var(--color-brown-600-rgb), 0.02);">
+                        <input type="number" class="kdz-input input-body" placeholder="0">
+                    </td>
+                    
+                    <td style="text-align: center;">
+                        <label class="kdz-checkbox-label" title="Оплата кредитними (+4% комісії)">
+                            <input type="checkbox" class="input-check">
+                        </label>
+                    </td>
+                    
+                    <td class="cell-body-end text-bold">0.00</td>
+                    <td class="cell-int-accum" style="font-weight: 500;">0.00</td>
+                `;
+                tbody.appendChild(tr);
+            }
+            recalculateKdz();
+        }
+
+        // Only updates numbers in existing cells, doesn't touch inputs
+        function recalculateKdz() {
             const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
-            
-            const tbody = document.querySelector('#kdzTable tbody');
-            tbody.innerHTML = '';
+            const rows = document.querySelectorAll('#kdzTbody tr');
             
             let currentBody = startBody;
             let accumulatedInt = 0;
             let totalIntAccrued = 0;
             let totalCommission = 0;
             
-            for (let d = 1; d <= days; d++) {
-                // 1. Accrue Interest
+            rows.forEach(row => {
+                // Get inputs values
+                const inputInt = row.querySelector('.input-int').value;
+                const inputBody = row.querySelector('.input-body').value;
+                const isCredit = row.querySelector('.input-check').checked;
+                
+                const payInt = parseFloat(inputInt) || 0;
+                const payBody = parseFloat(inputBody) || 0;
+
+                // Update Start Body Cell
+                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
+                
+                // Calc Daily Interest
                 const dailyInt = currentBody * rate / 100;
                 totalIntAccrued += dailyInt;
                 accumulatedInt += dailyInt;
                 
-                // 2. Get Payments from State
-                const payData = kdzData[d] || { int: 0, body: 0, isCredit: false };
-                const payInt = payData.int;
-                const payBody = payData.body;
+                // Update Daily Interest Cell
+                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 
-                // 3. Calc Commission
-                if (payData.isCredit) {
+                // Calc Commission
+                if (isCredit) {
                     totalCommission += (payInt * 0.04);
                 }
                 
-                // 4. Apply Payments
-                // Payments logic: first pay off accrued interest, then body (simplified for calculator)
+                // Apply payments
                 accumulatedInt -= payInt;
-                if (accumulatedInt < 0) accumulatedInt = 0; // Overpayment of interest not handled logic-wise, just capped
+                if(accumulatedInt < 0) accumulatedInt = 0;
                 
-                const bodyBefore = currentBody;
                 currentBody -= payBody;
-                if (currentBody < 0) currentBody = 0;
+                if(currentBody < 0) currentBody = 0;
                 
-                // 5. Render Row
-                const tr = document.createElement('tr');
-                if (payInt > 0 || payBody > 0) tr.classList.add('kdz-row-active');
+                // Update End Cells
+                row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 
-                tr.innerHTML = `
-                    <td style="text-align: center; color: var(--color-text-secondary); font-size: 13px;">${d}</td>
-                    <td class="text-dim">${bodyBefore.toFixed(2)}</td>
-                    <td class="text-dim">+${dailyInt.toFixed(2)}</td>
-                    
-                    <td style="background-color: rgba(var(--color-teal-500-rgb), 0.02);">
-                        <input type="number" class="kdz-input input-int" 
-                               data-day="${d}" placeholder="0" 
-                               value="${payInt > 0 ? payInt : ''}">
-                    </td>
-                    
-                    <td style="background-color: rgba(var(--color-brown-600-rgb), 0.02);">
-                        <input type="number" class="kdz-input input-body" 
-                               data-day="${d}" placeholder="0" 
-                               value="${payBody > 0 ? payBody : ''}">
-                    </td>
-                    
-                    <td style="text-align: center;">
-                        <label class="kdz-checkbox-label" title="Оплата кредитними (+4% комісії)">
-                            <input type="checkbox" class="input-check" 
-                                   data-day="${d}" ${payData.isCredit ? 'checked' : ''}>
-                        </label>
-                    </td>
-                    
-                    <td class="text-bold">${currentBody.toFixed(2)}</td>
-                    <td style="color: ${accumulatedInt > 0.01 ? '#c62828' : '#2e7d32'}; font-weight: 500;">
-                        ${accumulatedInt.toFixed(2)}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
+                const intCell = row.querySelector('.cell-int-accum');
+                intCell.textContent = accumulatedInt.toFixed(2);
+                intCell.style.color = accumulatedInt > 0.01 ? '#c62828' : '#2e7d32';
+            });
             
-            // 6. Update Totals
+            // Update Totals
             document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
             document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
             document.getElementById('liveCommission').textContent = totalCommission.toFixed(2) + ' грн';
@@ -668,56 +681,17 @@
             document.getElementById('liveTotalToPay').textContent = totalToPay.toFixed(2) + ' грн';
         }
 
-        // --- Event Delegation for Inputs ---
-        document.getElementById('kdzTable').addEventListener('input', (e) => {
-            if (e.target.classList.contains('kdz-input')) {
-                const day = e.target.getAttribute('data-day');
-                const val = parseFloat(e.target.value);
-                const isInt = e.target.classList.contains('input-int');
-                
-                if (!kdzData[day]) kdzData[day] = { int: 0, body: 0, isCredit: false };
-                
-                if (isInt) kdzData[day].int = isNaN(val) ? 0 : val;
-                else kdzData[day].body = isNaN(val) ? 0 : val;
-                
-                // Re-render but keep focus
-                saveFocusAndRender(e.target);
-            }
-        });
-
-        document.getElementById('kdzTable').addEventListener('change', (e) => {
-            if (e.target.classList.contains('input-check')) {
-                const day = e.target.getAttribute('data-day');
-                if (!kdzData[day]) kdzData[day] = { int: 0, body: 0, isCredit: false };
-                kdzData[day].isCredit = e.target.checked;
-                saveFocusAndRender(e.target);
-            }
-        });
-
-        function saveFocusAndRender(activeEl) {
-            const day = activeEl.getAttribute('data-day');
-            const isInt = activeEl.classList.contains('input-int');
-            const isBody = activeEl.classList.contains('input-body');
-            const isCheck = activeEl.classList.contains('input-check');
-            
-            initKdzTable();
-            
-            let selector = '';
-            if (isInt) selector = `.input-int[data-day="${day}"]`;
-            else if (isBody) selector = `.input-body[data-day="${day}"]`;
-            else if (isCheck) selector = `.input-check[data-day="${day}"]`;
-            
-            if (selector) {
-                const el = document.querySelector(selector);
-                if (el) el.focus();
-            }
-        }
+        // --- Event Listener: Recalculate on any input change ---
+        // 'input' event fires immediately when typing
+        document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
+        // 'change' needed for checkboxes sometimes
+        document.getElementById('kdzTable').addEventListener('change', recalculateKdz);
 
         // --- Init ---
         addPeriod31();
         addPeriod62();
         addPeriodOverdraft();
-        // KDZ will init on tab click to save perf, or manually here
+        rebuildKdzTable(); 
     </script>
 </body>
 </html>
