@@ -16,6 +16,7 @@
             --color-border: rgba(94, 82, 64, 0.2);
             --color-card-border: rgba(94, 82, 64, 0.12);
             --color-error: #e54d4d;
+            --color-success: #27ae60;
             
             --color-slider-track: #e6e6e6;
             --color-slider-fill: #ea5b5b;
@@ -80,6 +81,7 @@
         .result-label { color: var(--color-text-secondary); font-size: 13px; }
         .result-value { font-weight: 600; font-size: 14px; color: var(--color-text); }
         .result-value.highlight { color: var(--color-primary); font-size: 16px; }
+        .result-value.success { color: var(--color-success); }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm); }
@@ -113,6 +115,10 @@
         .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
         .error-message.visible { display: block; }
+        
+        .separator-row { display: flex; align-items: center; margin: 8px 0; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .separator-row::before, .separator-row::after { content: ""; flex: 1; border-bottom: 1px solid var(--color-border); }
+        .separator-row span { padding: 0 8px; }
     </style>
 </head>
 <body>
@@ -273,10 +279,15 @@
 
                 <div class="result-section">
                     <div class="result-item"><span class="result-label">Борг (Тіло + % до списання)</span><span class="result-value highlight" id="liveTotalDebt">0.00 грн</span></div>
-                    <div class="result-item"><span class="result-label">Погашено відсотків</span><span class="result-value" id="liveInterestPaid">0.00 грн</span></div>
-                    <div class="result-item"><span class="result-label">Погашено тіла</span><span class="result-value" id="liveBodyPaid">0.00 грн</span></div>
-                    <div class="result-item"><span class="result-label">Залишок тіла</span><span class="result-value" id="liveBodyRemain">0.00 грн</span></div>
                     <div class="result-item"><span class="result-label">Комісія 4%</span><span class="result-value" id="liveCommission">0.00 грн</span></div>
+                    
+                    <div class="separator-row"><span>Вже погашено</span></div>
+                    
+                    <div class="result-item"><span class="result-label">Погашено тіла</span><span class="result-value success" id="liveBodyPaid">0.00 грн</span></div>
+                    <div class="result-item"><span class="result-label">Погашено відсотків</span><span class="result-value success" id="liveInterestPaid">0.00 грн</span></div>
+                    <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-sm); margin-top: 4px;">
+                        <span class="result-label" style="font-weight: 600;">Залишилось до повного погашення</span><span class="result-value highlight" id="liveRemainToPay" style="color: var(--color-primary);">0.00 грн</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -438,7 +449,6 @@
                 const inputElem = row.querySelector('.input-body');
                 let rawInput = parseFloat(inputElem.value) || 0;
                 
-                // Logic: Input = Body Repayment
                 let effectivePayment = rawInput; 
                 let displayHelper = row.querySelector('.effective-val');
 
@@ -481,11 +491,8 @@
 
             // FINAL PAYMENT SECTION
             const totalDebt = currentBody + accumulatedInt;
-            document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
             
             const totalPaymentInput = parseFloat(document.getElementById('kdzTotalPayInput').value) || 0;
-            
-            // Logic: Input = Body/Interest Repayment
             let effectiveFinalPayment = totalPaymentInput;
             let finalCommission = 0;
 
@@ -509,11 +516,17 @@
 
             const remainingBody = currentBody - paymentForBody;
             const combinedCommission = totalCommission + finalCommission;
+            
+            const totalPaid = paymentForBody + paymentForInterest;
+            const remainToPay = totalDebt - totalPaid;
 
-            document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
-            document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
-            document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
+            document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
             document.getElementById('liveCommission').textContent = combinedCommission.toFixed(2) + ' грн';
+            
+            document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
+            document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
+            
+            document.getElementById('liveRemainToPay').textContent = remainToPay.toFixed(2) + ' грн';
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
