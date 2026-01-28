@@ -6,515 +6,718 @@
     <title>Калькулятор monobank</title>
     <style>
         :root {
-            --color-background: #fcfcf9;
-            --color-surface: #ffffff;
-            --color-text: #13343b;
-            --color-text-secondary: #626c71;
-            --color-primary: #ea5357; /* mono red styling option, or keep teal */
-            --color-primary-teal: #21808d;
-            --color-border: rgba(94, 82, 64, 0.2);
-            --radius-base: 12px;
+            --color-white: rgba(255, 255, 255, 1);
+            --color-black: rgba(0, 0, 0, 1);
+            --color-cream-50: rgba(252, 252, 249, 1);
+            --color-cream-100: rgba(255, 255, 253, 1);
+            --color-gray-200: rgba(245, 245, 245, 1);
+            --color-gray-300: rgba(167, 169, 169, 1);
+            --color-gray-400: rgba(119, 124, 124, 1);
+            --color-slate-500: rgba(98, 108, 113, 1);
+            --color-brown-600: rgba(94, 82, 64, 1);
+            --color-charcoal-700: rgba(31, 33, 33, 1);
+            --color-charcoal-800: rgba(38, 40, 40, 1);
+            --color-slate-900: rgba(19, 52, 59, 1);
+            --color-teal-300: rgba(50, 184, 198, 1);
+            --color-teal-400: rgba(45, 166, 178, 1);
+            --color-teal-500: rgba(33, 128, 141, 1);
+            --color-teal-600: rgba(29, 116, 128, 1);
+            --color-brown-600-rgb: 94, 82, 64;
+            --color-teal-500-rgb: 33, 128, 141;
+            --color-slate-900-rgb: 19, 52, 59;
+            
+            --color-background: var(--color-cream-50);
+            --color-surface: var(--color-cream-100);
+            --color-text: var(--color-slate-900);
+            --color-text-secondary: var(--color-slate-500);
+            --color-primary: var(--color-teal-500);
+            --color-primary-hover: var(--color-teal-600);
+            --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+            
+            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --space-8: 8px;
+            --space-12: 12px;
             --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --space-32: 32px;
+            --radius-base: 8px;
+            --radius-lg: 12px;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
         }
-
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-gray-400-rgb: 119, 124, 124;
+                --color-teal-300-rgb: 50, 184, 198;
+                --color-gray-300-rgb: 167, 169, 169;
+                --color-gray-200-rgb: 245, 245, 245;
+                
+                --color-background: var(--color-charcoal-700);
+                --color-surface: var(--color-charcoal-800);
+                --color-text: var(--color-gray-200);
+                --color-text-secondary: rgba(var(--color-gray-300-rgb), 0.7);
+                --color-primary: var(--color-teal-300);
+                --color-primary-hover: var(--color-teal-400);
+                --color-border: rgba(var(--color-gray-400-rgb), 0.3);
+                --color-card-border: rgba(var(--color-gray-400-rgb), 0.2);
+            }
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: var(--font-family-base);
             background-color: var(--color-background);
             color: var(--color-text);
-            padding: 20px;
+            padding: var(--space-24);
             line-height: 1.5;
         }
-
-        .container { max-width: 1100px; margin: 0 auto; }
         
-        /* Tabs Styling */
-        .tabs { display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border); }
-        .tab { 
-            padding: 12px 24px; 
-            background: none; border: none; 
-            font-size: 16px; font-weight: 500; color: var(--color-text-secondary);
-            cursor: pointer; border-bottom: 3px solid transparent;
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: var(--space-8); color: var(--color-text); }
+        .subtitle { color: var(--color-text-secondary); margin-bottom: var(--space-32); font-size: 14px; }
+        
+        .tabs { display: flex; gap: var(--space-8); margin-bottom: var(--space-24); border-bottom: 1px solid var(--color-border); }
+        .tab {
+            padding: var(--space-12) var(--space-24);
+            background: none; border: none;
+            color: var(--color-text-secondary); cursor: pointer;
+            font-size: 15px; font-weight: 500;
+            border-bottom: 2px solid transparent; transition: all 0.2s;
         }
-        .tab.active { color: var(--color-primary-teal); border-bottom-color: var(--color-primary-teal); }
+        .tab:hover { color: var(--color-text); }
+        .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+        
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* Card Styling */
+        
         .card {
-            background: var(--color-surface);
-            border-radius: var(--radius-base);
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
+            background-color: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-24);
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--space-24);
         }
-
-        /* Forms */
-        .form-group { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; }
+        
+        .form-group { margin-bottom: var(--space-20); }
+        
+        label { display: block; margin-bottom: var(--space-8); font-weight: 500; font-size: 14px; color: var(--color-text); }
+        
         input[type="number"], select {
-            width: 100%; padding: 12px;
+            width: 100%; padding: var(--space-12);
             border: 1px solid var(--color-border);
-            border-radius: 8px; font-size: 16px;
+            border-radius: var(--radius-base);
+            font-size: 15px;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            transition: border-color 0.2s;
         }
+        input[type="number"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
         
         .btn {
-            width: 100%; padding: 14px;
-            background-color: var(--color-primary-teal);
-            color: white; border: none; border-radius: 8px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
+            width: 100%; padding: var(--space-12) var(--space-24);
+            background-color: var(--color-primary);
+            color: white; border: none; border-radius: var(--radius-base);
+            font-size: 15px; font-weight: 500; cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .btn:hover { background-color: #1d7480; }
-        .btn-outline {
-            background: transparent; color: var(--color-primary-teal);
-            border: 1px solid var(--color-primary-teal); margin-bottom: 16px;
-        }
-
-        /* Results & Info */
-        .result-section {
-            background: #f5f5f5; border-radius: 12px; padding: 20px; margin-top: 24px;
-        }
-        .result-item {
-            display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px;
-        }
-        .result-value { font-weight: 700; }
-        .highlight { color: var(--color-primary-teal); font-size: 18px; }
-        .info-box {
-            background: rgba(33, 128, 141, 0.1); color: #1d7480;
-            padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 16px;
-            border-left: 4px solid var(--color-primary-teal);
-        }
-
-        /* Grid Layouts */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .btn:hover { background-color: var(--color-primary-hover); }
         
-        /* KDZ Specific Interactive Table */
-        .kdz-table-wrapper {
+        .btn-ghost {
+            background-color: rgba(var(--color-teal-500-rgb), 0.15);
+            color: var(--color-primary);
+            margin-bottom: var(--space-16);
+        }
+        .btn-ghost:hover { background-color: rgba(var(--color-teal-500-rgb), 0.25); }
+        
+        .result-section {
+            margin-top: var(--space-24);
+            padding: var(--space-20);
+            background-color: var(--color-background);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+        }
+        
+        .result-item {
+            display: flex; justify-content: space-between;
+            padding: var(--space-12) 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .result-item:last-child { border-bottom: none; }
+        
+        .result-label { color: var(--color-text-secondary); font-size: 14px; }
+        .result-value { font-weight: 600; font-size: 16px; color: var(--color-text); }
+        .result-value.highlight { color: var(--color-primary); font-size: 18px; }
+        
+        .info-box {
+            background-color: rgba(var(--color-teal-500-rgb), 0.08);
+            border-left: 3px solid var(--color-primary);
+            padding: var(--space-16);
+            border-radius: var(--radius-base);
+            margin-top: var(--space-16);
+            font-size: 13px; color: var(--color-text-secondary);
+        }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16); }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-12); }
+        @media (max-width: 640px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        
+        .rate-badge {
+            display: inline-block; padding: 4px 10px;
+            background-color: rgba(var(--color-teal-500-rgb), 0.15);
+            color: var(--color-primary);
+            border-radius: 4px; font-size: 13px; font-weight: 600; margin-left: var(--space-8);
+        }
+        
+        .period-card {
+            background-color: var(--color-background);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            margin-bottom: var(--space-16);
+            position: relative;
+        }
+        .period-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-12); }
+        .period-title { font-weight: 600; font-size: 14px; color: var(--color-text); }
+        
+        .remove-btn {
+            background: none; border: none; color: var(--color-text-secondary);
+            cursor: pointer; font-size: 20px; padding: 0; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; transition: all 0.2s;
+        }
+        .remove-btn:hover { background-color: rgba(192, 21, 47, 0.1); color: rgba(192, 21, 47, 1); }
+
+        /* --- STYLES FOR KDZ INTERACTIVE TABLE --- */
+        .kdz-table-container {
             overflow-x: auto;
             border: 1px solid var(--color-border);
-            border-radius: 12px;
-            margin-top: 20px;
+            border-radius: var(--radius-base);
+            margin-top: var(--space-20);
         }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 14px; }
-        th { background: #f0f2f5; padding: 12px 8px; text-align: left; font-weight: 600; position: sticky; top: 0; }
-        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        
-        /* Interactive Inputs in Table */
-        .input-cell { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        .input-cell:focus { border-color: var(--color-primary-teal); outline: none; background: #fff; }
-        
-        /* Checkbox styling */
-        .cb-wrapper { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: #666; cursor: pointer;}
-        .cb-wrapper input { width: 16px; height: 16px; margin: 0; cursor: pointer; }
-        
-        /* Sticky Footer for Total */
-        tfoot td { background: #f9fafb; font-weight: 700; padding: 12px; border-top: 2px solid #ddd; }
-        
-        @media (max-width: 768px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .kdz-table {
+            width: 100%; border-collapse: collapse; min-width: 700px;
+            font-size: 14px;
         }
+        .kdz-table th {
+            background-color: rgba(var(--color-teal-500-rgb), 0.08);
+            padding: 10px 12px;
+            text-align: left; font-weight: 600; color: var(--color-text);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .kdz-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+            color: var(--color-text);
+        }
+        .kdz-table tr:last-child td { border-bottom: none; }
+        
+        /* Interactive Inputs inside Table */
+        .kdz-input {
+            width: 90px; padding: 6px 8px;
+            font-size: 14px; text-align: right;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+        }
+        .kdz-input:focus { border-color: var(--color-primary); }
+        .kdz-input::placeholder { color: #ccc; }
+        
+        .kdz-checkbox-label {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; cursor: pointer; color: var(--color-text-secondary);
+        }
+        .kdz-checkbox-label input { margin-right: 4px; width: 14px; height: 14px; }
+        
+        .kdz-row-active { background-color: rgba(var(--color-teal-500-rgb), 0.03); }
+        .text-dim { color: var(--color-text-secondary); font-size: 13px; }
+        .text-bold { font-weight: 600; }
+        
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🏦 Калькулятор monobank</h1>
-    
-    <div class="tabs">
-        <button class="tab active" data-tab="credit">Кредитний ліміт</button>
-        <button class="tab" data-tab="installment">Розстрочка</button>
-        <button class="tab" data-tab="kdz">КДЗ (Інтерактивний)</button>
-    </div>
-
-    <!-- 1. КРЕДИТНИЙ ЛІМІТ -->
-    <div class="tab-content active" id="credit">
-        <div class="card">
-            <h2>Розрахунок % за кредитним лімітом</h2>
-            <div class="form-group">
-                <label><input type="checkbox" id="leapYearCredit"> Високосний рік (366 днів)</label>
-            </div>
-            
-            <h3>Ставка 3.1%</h3>
-            <div id="periods31"></div>
-            <button class="btn btn-outline" onclick="addPeriod31()">+ Додати період 3.1%</button>
-            
-            <h3>Ставка 6.2%</h3>
-            <div id="periods62"></div>
-            <button class="btn btn-outline" onclick="addPeriod62()">+ Додати період 6.2%</button>
-            
-            <h3>Перевищення ліміту (Овердрафт)</h3>
-            <div class="form-group">
-                <label><input type="radio" name="overdraftRange" value="less" checked> Менше 1000 грн (3.1%)</label>
-                <label><input type="radio" name="overdraftRange" value="more"> 1000 грн і більше (6.2%)</label>
-            </div>
-            <div id="periodsOverdraft"></div>
-            <button class="btn btn-outline" onclick="addPeriodOverdraft()">+ Додати період овердрафту</button>
-
-            <button class="btn" onclick="calculateCredit()">Розрахувати</button>
-            
-            <div class="result-section" id="resultCredit" style="display:none;">
-                <div class="result-item"><span>Всього відсотків:</span> <span class="result-value highlight" id="totalInterest">0 грн</span></div>
-                <div class="result-item"><span>З них 3.1%:</span> <span id="interest31">0 грн</span></div>
-                <div class="result-item"><span>З них 6.2%:</span> <span id="interest62">0 грн</span></div>
-                <div class="result-item"><span>Овердрафт:</span> <span id="interestOverdraft">0 грн</span></div>
-            </div>
+    <div class="container">
+        <h1>🏦 Калькулятор monobank</h1>
+        <p class="subtitle">Розрахунок процентів за кредитним лімітом</p>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="credit">Кредитний ліміт</button>
+            <button class="tab" data-tab="installment">Розстрочка</button>
+            <button class="tab" data-tab="kdz">КДЗ (Калькулятор)</button>
         </div>
-    </div>
-
-    <!-- 2. РОЗСТРОЧКА -->
-    <div class="tab-content" id="installment">
-        <div class="card">
-            <h2>Розстрочка (1.9%/міс)</h2>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label>Сума (грн)</label>
-                    <input type="number" id="amountInst" value="30000">
-                </div>
-                <div class="form-group">
-                    <label>Місяців</label>
-                    <input type="number" id="monthsInst" value="6">
-                </div>
-            </div>
-            <button class="btn" onclick="calculateInstallment()">Розрахувати</button>
-            
-            <div class="result-section" id="resultInst" style="display:none;">
-                <div class="result-item"><span>Щомісячний платіж:</span> <span class="result-value highlight" id="monthlyPayment">0 грн</span></div>
-                <div class="result-item"><span>Щомісячна комісія:</span> <span id="monthlyFee">0 грн</span></div>
-                <div class="result-item"><span>Всього переплата:</span> <span id="totalOverpayment">0 грн</span></div>
-                <div class="result-item"><span>Повна сума виплати:</span> <span id="totalInstallment">0 грн</span></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. КДЗ (PRO ВЕРСІЯ) -->
-    <div class="tab-content" id="kdz">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>КДЗ: Інтерактивний розрахунок</h2>
-                <button class="btn" style="width: auto; padding: 8px 16px; font-size: 14px; background: #626c71;" onclick="resetKdz()">🔄 Скинути</button>
-            </div>
-            
-            <div class="grid-3" style="align-items: end; margin-bottom: 20px;">
-                <div class="form-group" style="margin-bottom:0">
-                    <label>Тіло кредиту</label>
-                    <input type="number" id="kdzBody" value="5000" oninput="initKdzTable()">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>Кількість днів</label>
-                    <input type="number" id="kdzDays" value="14" min="1" max="60" oninput="initKdzTable()">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>Ставка</label>
-                    <select id="kdzRate" onchange="initKdzTable()" style="padding: 12px;">
-                        <option value="0.3">0.3% на день</option>
-                        <option value="0.5">0.5% на день</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Результати live -->
-            <div class="result-section" style="margin-top: 0; background: #e0f2f1; border: 1px solid #21808d;">
-                <div class="grid-3">
-                    <div>
-                        <span class="result-label">Залишок тіла</span>
-                        <div class="result-value highlight" id="liveBodyRemain">5000.00 грн</div>
-                    </div>
-                    <div>
-                        <span class="result-label">Нараховано %</span>
-                        <div class="result-value" id="liveInterestTotal">0.00 грн</div>
-                    </div>
-                    <div>
-                        <span class="result-label">Комісія 4%</span>
-                        <div class="result-value" id="liveCommission">0.00 грн</div>
-                    </div>
-                </div>
-                <div style="margin-top: 10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.1); text-align: right;">
-                    <span style="font-size:14px; margin-right: 10px;">Разом до повного закриття:</span>
-                    <span class="result-value highlight" style="font-size: 20px;" id="liveTotalToPay">0.00 грн</span>
-                </div>
-            </div>
-
-            <div class="info-box">
-                👇 <strong>Вносьте погашення прямо в таблицю!</strong> Вкажіть суму в колонку "Погашення %" або "Погашення тіла" у відповідний день. 
-                Поставте галочку ☑️, якщо оплата була кредитними коштами (додасться 4%).
-            </div>
-
-            <div class="kdz-table-wrapper">
-                <table id="kdzTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px; text-align: center;">Дн</th>
-                            <th>Тіло (ранок)</th>
-                            <th>% за день</th>
-                            <th style="background: #fff3e0;">Погашення %</th>
-                            <th style="background: #e3f2fd;">Погашення тіла</th>
-                            <th>Опції</th>
-                            <th>Тіло (вечір)</th>
-                            <th>Борг по %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Рядки генеруються JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // --- ЗАГАЛЬНА ЛОГІКА ТАБІВ ---
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(tab.dataset.tab).classList.add('active');
-            if(tab.dataset.tab === 'kdz') initKdzTable(); // Init KDZ on tab switch
-        });
-    });
-
-    // ==========================================
-    // 1. ЛОГІКА КРЕДИТНОГО ЛІМІТУ (без змін)
-    // ==========================================
-    let pc31=0, pc62=0, pcOd=0;
-    
-    function createPeriodHTML(id, type) {
-        return `
-        <div class="period-card" id="${type}-${id}" style="margin-bottom:12px; border:1px solid #eee; padding:10px; border-radius:8px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <strong>Період ${id}</strong>
-                <button onclick="document.getElementById('${type}-${id}').remove()" style="color:red; background:none; border:none; cursor:pointer;">Видалити</button>
-            </div>
-            <div class="grid-3">
-                <div><label>З</label><input type="number" class="d-from" value="1"></div>
-                <div><label>По</label><input type="number" class="d-to" value="10"></div>
-                <div><label>Сума</label><input type="number" class="d-amount" value="10000"></div>
-            </div>
-        </div>`;
-    }
-
-    function addPeriod31() { pc31++; document.getElementById('periods31').insertAdjacentHTML('beforeend', createPeriodHTML(pc31, 'p31')); }
-    function addPeriod62() { pc62++; document.getElementById('periods62').insertAdjacentHTML('beforeend', createPeriodHTML(pc62, 'p62')); }
-    function addPeriodOverdraft() { pcOd++; document.getElementById('periodsOverdraft').insertAdjacentHTML('beforeend', createPeriodHTML(pcOd, 'pod')); }
-
-    function calculateCredit() {
-        const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
-        let sum31=0, sum62=0, sumOd=0;
-
-        // Helper
-        const calc = (selector, rate) => {
-            let total = 0;
-            document.querySelectorAll(selector).forEach(el => {
-                const f = +el.querySelector('.d-from').value;
-                const t = +el.querySelector('.d-to').value;
-                const a = +el.querySelector('.d-amount').value;
-                const d = t - f + 1;
-                if(d > 0) total += (a * d * rate * 12) / daysInYear / 100;
-            });
-            return total;
-        };
-
-        sum31 = calc('#periods31 .period-card', 3.1);
-        sum62 = calc('#periods62 .period-card', 6.2);
         
-        const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
-        sumOd = calc('#periodsOverdraft .period-card', odRate);
-
-        document.getElementById('totalInterest').textContent = (sum31+sum62+sumOd).toFixed(2) + ' грн';
-        document.getElementById('interest31').textContent = sum31.toFixed(2) + ' грн';
-        document.getElementById('interest62').textContent = sum62.toFixed(2) + ' грн';
-        document.getElementById('interestOverdraft').textContent = sumOd.toFixed(2) + ' грн';
-        document.getElementById('resultCredit').style.display = 'block';
-    }
-
-    // ==========================================
-    // 2. ЛОГІКА РОЗСТРОЧКИ (без змін)
-    // ==========================================
-    function calculateInstallment() {
-        const amt = +document.getElementById('amountInst').value;
-        const mos = +document.getElementById('monthsInst').value;
-        if(!amt || !mos) return;
-
-        const fee = amt * 0.019;
-        const pay = (amt / mos) + fee;
-        
-        document.getElementById('monthlyPayment').textContent = pay.toFixed(2) + ' грн';
-        document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн';
-        document.getElementById('totalOverpayment').textContent = (fee * mos).toFixed(2) + ' грн';
-        document.getElementById('totalInstallment').textContent = (amt + (fee * mos)).toFixed(2) + ' грн';
-        document.getElementById('resultInst').style.display = 'block';
-    }
-
-    // ==========================================
-    // 3. ЛОГІКА КДЗ (PRO - ІНТЕРАКТИВНА)
-    // ==========================================
-    
-    // Зберігаємо дані про погашення в об'єкті { dayNum: { int: 0, body: 0, isCredit: false } }
-    let kdzState = {}; 
-
-    function resetKdz() {
-        kdzState = {};
-        initKdzTable();
-    }
-
-    function initKdzTable() {
-        const days = +document.getElementById('kdzDays').value;
-        const startBody = +document.getElementById('kdzBody').value;
-        const rate = +document.getElementById('kdzRate').value;
-        const tbody = document.querySelector('#kdzTable tbody');
-        
-        // Якщо кількість днів змінилась, треба зберегти існуючі погашення, які влазять в новий діапазон
-        // Але для простоти рендеримо заново, підтягуючи state
-        
-        tbody.innerHTML = '';
-        
-        // Змінні для розрахунку "на льоту"
-        let currentBody = startBody;
-        let accumulatedInterest = 0;
-        
-        let totalInterestAccrued = 0;
-        let totalCommission = 0;
-
-        for (let d = 1; d <= days; d++) {
-            // 1. Нараховуємо відсоток за цей день на поточне тіло
-            let dailyInt = currentBody * rate / 100;
-            totalInterestAccrued += dailyInt;
-            accumulatedInterest += dailyInt;
-
-            // 2. Чи є погашення в цей день?
-            let payInt = 0;
-            let payBody = 0;
-            let isCredit = false;
-
-            if (kdzState[d]) {
-                payInt = kdzState[d].int || 0;
-                payBody = kdzState[d].body || 0;
-                isCredit = kdzState[d].isCredit || false;
-            }
-
-            // Валідація: не можна погасити більше ніж є
-            // (Але для UX дозволимо вводити, просто підсвітимо, або обріжемо в розрахунках)
-            // Тут просто врахуємо математично
-            
-            let effectivePayInt = payInt;
-            let effectivePayBody = payBody;
-            
-            // Якщо платимо кредитними - комісія 4% від суми погашення відсотків
-            if(isCredit) {
-                totalCommission += (effectivePayInt * 0.04);
-            }
-
-            // 3. Віднімаємо погашення
-            accumulatedInterest -= effectivePayInt;
-            // Якщо погасили відсотків більше ніж було - (в реалі це йде в тіло або переплата, тут спростимо: мінус в % можливий як переплата)
-            if(accumulatedInterest < 0) accumulatedInterest = 0; 
-
-            let bodyBefore = currentBody;
-            currentBody -= effectivePayBody;
-            if(currentBody < 0) currentBody = 0;
-
-            // 4. Рендеримо рядок
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="text-align:center;"><strong>${d}</strong></td>
-                <td>${bodyBefore.toFixed(2)}</td>
-                <td style="color:#666;">+${dailyInt.toFixed(2)}</td>
+        <!-- ======================= -->
+        <!-- 1. КРЕДИТНИЙ ЛІМІТ      -->
+        <!-- ======================= -->
+        <div class="tab-content active" id="credit">
+            <div class="card">
+                <h2 style="margin-bottom: var(--space-16); font-size: 20px;">
+                    Розрахунок процентів за кредитним лімітом
+                </h2>
                 
-                <!-- Інпут погашення відсотків -->
-                <td style="background:#fffaf5;">
-                    <input type="number" class="input-cell kdz-pay-int" 
-                        data-day="${d}" value="${payInt > 0 ? payInt : ''}" placeholder="0">
-                </td>
-                
-                <!-- Інпут погашення тіла -->
-                <td style="background:#f1f8ff;">
-                    <input type="number" class="input-cell kdz-pay-body" 
-                        data-day="${d}" value="${payBody > 0 ? payBody : ''}" placeholder="0">
-                </td>
-
-                <!-- Чекбокс кредитних -->
-                <td>
-                    <label class="cb-wrapper" title="Оплата кредитними коштами (+4% комісії)">
-                        <input type="checkbox" class="kdz-is-credit" data-day="${d}" ${isCredit ? 'checked' : ''}>
-                        Кред.
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="leapYearCredit" style="width: auto;">
+                        Високосний рік (366 днів)
                     </label>
-                </td>
-
-                <td style="font-weight:600;">${currentBody.toFixed(2)}</td>
-                <td style="color:${accumulatedInterest > 0.1 ? '#d32f2f' : 'green'}">${accumulatedInterest.toFixed(2)}</td>
-            `;
-            tbody.appendChild(tr);
-        }
-
-        // Оновлюємо верхній блок результатів
-        document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
-        document.getElementById('liveInterestTotal').textContent = totalInterestAccrued.toFixed(2) + ' грн';
-        document.getElementById('liveCommission').textContent = totalCommission.toFixed(2) + ' грн';
+                </div>
+                
+                <h3 style="margin: var(--space-20) 0 var(--space-12) 0; font-size: 16px; font-weight: 600;">
+                    Ставка 3.1%
+                </h3>
+                <div id="periods31"></div>
+                <button class="btn btn-ghost" onclick="addPeriod31()">+ Додати період 3.1%</button>
+                
+                <h3 style="margin: var(--space-20) 0 var(--space-12) 0; font-size: 16px; font-weight: 600;">
+                    Ставка 6.2%
+                </h3>
+                <div id="periods62"></div>
+                <button class="btn btn-ghost" onclick="addPeriod62()">+ Додати період 6.2%</button>
+                
+                <h3 style="margin: var(--space-20) 0 var(--space-12) 0; font-size: 16px; font-weight: 600;">
+                    Сума перевищеного ліміту
+                </h3>
+                <div class="form-group">
+                    <label>Сума на кінець місяця</label>
+                    <div style="display: flex; gap: var(--space-12);">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); flex: 1; background-color: var(--color-background);">
+                            <input type="radio" name="overdraftRange" value="less" checked style="width: auto;">
+                            Менше 1000 грн (3.1%)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); flex: 1; background-color: var(--color-background);">
+                            <input type="radio" name="overdraftRange" value="more" style="width: auto;">
+                            1000 грн і більше (6.2%)
+                        </label>
+                    </div>
+                </div>
+                <div id="periodsOverdraft"></div>
+                <button class="btn btn-ghost" onclick="addPeriodOverdraft()">+ Додати період перевищення</button>
+                
+                <button class="btn" onclick="calculateCredit()">Розрахувати все разом</button>
+                
+                <div class="result-section" id="resultCredit" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">Відсотки 3.1%</span>
+                        <span class="result-value" id="interest31">0 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Відсотки 6.2%</span>
+                        <span class="result-value" id="interest62">0 грн</span>
+                    </div>
+                    <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-16); margin-top: var(--space-8);">
+                        <span class="result-label" style="font-weight: 600;">Всього за кредитний ліміт</span>
+                        <span class="result-value highlight" id="totalInterest">0 грн</span>
+                    </div>
+                    <div class="result-item" style="margin-top: var(--space-16); padding-top: var(--space-16); border-top: 1px solid var(--color-border);">
+                        <span class="result-label">Овердрафт (ставка: <span id="appliedRate">0%</span>)</span>
+                        <span class="result-value" id="interestOverdraft">0 грн</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    ℹ️ Формула: (Сума × Кількість днів × Ставка% × 12) / 365(366) / 100.
+                </div>
+            </div>
+        </div>
         
-        // Всього до закриття = Поточне тіло + Накопичені % + Комісія (яка вже нарахована за факт оплат)
-        // АБО: Скільки клієнт ВЖЕ витратив + скільки ще винен.
-        // Зазвичай цікавить: "Скільки ще треба закинути зараз, щоб закрити все?"
-        // Це: Залишок Тіла + Борг по % 
-        let totalToCloseNow = currentBody + accumulatedInterest;
-        document.getElementById('liveTotalToPay').textContent = totalToCloseNow.toFixed(2) + ' грн';
-    }
+        <!-- ======================= -->
+        <!-- 2. РОЗСТРОЧКА           -->
+        <!-- ======================= -->
+        <div class="tab-content" id="installment">
+            <div class="card">
+                <h2 style="margin-bottom: var(--space-16); font-size: 20px;">
+                    Розрахунок розстрочки <span class="rate-badge">1.9%/міс</span>
+                </h2>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="amountInst">Сума розстрочки (грн)</label>
+                        <input type="number" id="amountInst" value="30000" step="0.01" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monthsInst">Кількість місяців</label>
+                        <input type="number" id="monthsInst" value="6" min="1" max="24">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="calculateInstallment()">Розрахувати</button>
+                
+                <div class="result-section" id="resultInst" style="display: none;">
+                    <div class="result-item">
+                        <span class="result-label">Щомісячний платіж</span>
+                        <span class="result-value highlight" id="monthlyPayment">0 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Комісія за місяць</span>
+                        <span class="result-value" id="monthlyFee">0 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Загальна переплата</span>
+                        <span class="result-value" id="totalOverpayment">0 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Всього до сплати</span>
+                        <span class="result-value" id="totalInstallment">0 грн</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    ℹ️ Комісія 1.9% від суми розстрочки щомісяця
+                </div>
+            </div>
+        </div>
 
-    // Слухаємо зміни в таблиці (Event Delegation)
-    document.querySelector('#kdzTable').addEventListener('input', (e) => {
-        if (e.target.classList.contains('input-cell')) {
-            const day = e.target.dataset.day;
-            const val = parseFloat(e.target.value);
-            const type = e.target.classList.contains('kdz-pay-int') ? 'int' : 'body';
+        <!-- ======================= -->
+        <!-- 3. КДЗ (ІНТЕРАКТИВ)     -->
+        <!-- ======================= -->
+        <div class="tab-content" id="kdz">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-20);">
+                    <h2 style="font-size: 20px; margin: 0;">Кредит «До завтра»</h2>
+                    <button class="btn btn-ghost" style="width: auto; padding: 6px 12px; font-size: 13px; margin: 0;" onclick="resetKdz()">
+                        🔄 Очистити дані
+                    </button>
+                </div>
 
-            if (!kdzState[day]) kdzState[day] = {};
-            kdzState[day][type] = isNaN(val) ? 0 : val;
-            
-            // Хитрий хід: ми не перерендеримо всю таблицю (бо втратимо фокус), 
-            // а просто запустимо перерахунок масиву і оновимо ТЕКСТОВІ комірки в наступних рядках.
-            // Але для простоти коду і надійності в першій версії - перерендеримо, АЛЕ збережемо фокус.
-            
-            saveFocusAndRender(e.target);
+                <!-- Верхній блок параметрів -->
+                <div class="grid-3" style="align-items: flex-end; margin-bottom: var(--space-24);">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Тіло кредиту (грн)</label>
+                        <input type="number" id="kdzBody" value="5000" oninput="initKdzTable()">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Кількість днів</label>
+                        <input type="number" id="kdzDays" value="14" min="1" max="365" oninput="initKdzTable()">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Ставка на день</label>
+                        <select id="kdzRate" onchange="initKdzTable()">
+                            <option value="0.3">0.3% на день</option>
+                            <option value="0.5">0.5% на день</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Підсумки Live -->
+                <div class="result-section" style="margin-top: 0; margin-bottom: var(--space-24);">
+                    <div class="result-item">
+                        <span class="result-label">Залишок тіла</span>
+                        <span class="result-value highlight" id="liveBodyRemain">5000.00 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Нараховані відсотки</span>
+                        <span class="result-value" id="liveInterestTotal">0.00 грн</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Комісія 4% (з кредитних)</span>
+                        <span class="result-value" id="liveCommission">0.00 грн</span>
+                    </div>
+                    <div class="result-item" style="border-top: 1px solid var(--color-border); padding-top: var(--space-12); margin-top: var(--space-8);">
+                        <span class="result-label" style="color: var(--color-text); font-weight: 500;">Разом до повного закриття зараз</span>
+                        <span class="result-value highlight" id="liveTotalToPay">0.00 грн</span>
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 0;">
+                    👇 Вписуйте погашення у таблицю нижче. Графік перераховується автоматично.
+                </div>
+
+                <!-- Таблиця -->
+                <div class="kdz-table-container">
+                    <table class="kdz-table" id="kdzTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 40px;">#</th>
+                                <th>Тіло (ранок)</th>
+                                <th>Нарах. %</th>
+                                <th style="background-color: rgba(var(--color-teal-500-rgb), 0.04);">Погашення %</th>
+                                <th style="background-color: rgba(var(--color-brown-600-rgb), 0.04);">Погашення тіла</th>
+                                <th style="text-align: center;">Кредитні?</th>
+                                <th>Тіло (вечір)</th>
+                                <th>Борг по %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS Generates Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // === GLOBAL VARIABLES & TABS ===
+        let periodCounter31 = 0;
+        let periodCounter62 = 0;
+        let periodCounterOverdraft = 0;
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // If KDZ tab is opened, ensure table is rendered
+                if(tabId === 'kdz') initKdzTable();
+            });
+        });
+
+        // === 1. CREDIT LIMIT LOGIC ===
+        function addPeriod31() {
+            periodCounter31++;
+            const div = document.createElement('div');
+            div.className = 'period-card';
+            div.id = 'period31-' + periodCounter31;
+            div.innerHTML = `
+                <div class="period-header">
+                    <span class="period-title">Період ${periodCounter31}</span>
+                    <button class="remove-btn" onclick="document.getElementById('period31-${periodCounter31}').remove()">×</button>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group"><label>День від</label><input type="number" class="debt31-from" value="1"></div>
+                    <div class="form-group"><label>День до</label><input type="number" class="debt31-to" value="10"></div>
+                    <div class="form-group"><label>Сума</label><input type="number" class="debt31-amount" value="25000"></div>
+                </div>`;
+            document.getElementById('periods31').appendChild(div);
         }
-    });
 
-    document.querySelector('#kdzTable').addEventListener('change', (e) => {
-        if (e.target.classList.contains('kdz-is-credit')) {
-            const day = e.target.dataset.day;
-            if (!kdzState[day]) kdzState[day] = {};
-            kdzState[day].isCredit = e.target.checked;
-            
-            saveFocusAndRender(e.target);
+        function addPeriod62() {
+            periodCounter62++;
+            const div = document.createElement('div');
+            div.className = 'period-card';
+            div.id = 'period62-' + periodCounter62;
+            div.innerHTML = `
+                <div class="period-header">
+                    <span class="period-title">Період ${periodCounter62}</span>
+                    <button class="remove-btn" onclick="document.getElementById('period62-${periodCounter62}').remove()">×</button>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group"><label>День від</label><input type="number" class="debt62-from" value="1"></div>
+                    <div class="form-group"><label>День до</label><input type="number" class="debt62-to" value="10"></div>
+                    <div class="form-group"><label>Сума</label><input type="number" class="debt62-amount" value="25000"></div>
+                </div>`;
+            document.getElementById('periods62').appendChild(div);
         }
-    });
 
-    function saveFocusAndRender(targetElem) {
-        // Зберігаємо позицію курсора і елемент
-        const day = targetElem.dataset.day;
-        const isInt = targetElem.classList.contains('kdz-pay-int');
-        const isBody = targetElem.classList.contains('kdz-pay-body');
-        const isCheck = targetElem.classList.contains('kdz-is-credit');
+        function addPeriodOverdraft() {
+            periodCounterOverdraft++;
+            const div = document.createElement('div');
+            div.className = 'period-card';
+            div.id = 'periodOverdraft-' + periodCounterOverdraft;
+            div.innerHTML = `
+                <div class="period-header">
+                    <span class="period-title">Період ${periodCounterOverdraft}</span>
+                    <button class="remove-btn" onclick="document.getElementById('periodOverdraft-${periodCounterOverdraft}').remove()">×</button>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group"><label>День від</label><input type="number" class="overdraft-from" value="1"></div>
+                    <div class="form-group"><label>День до</label><input type="number" class="overdraft-to" value="10"></div>
+                    <div class="form-group"><label>Сума</label><input type="number" class="overdraft-amount" value="2000"></div>
+                </div>`;
+            document.getElementById('periodsOverdraft').appendChild(div);
+        }
 
-        initKdzTable(); // Перемальовуємо все (перераховуємо математику)
+        function calculateCredit() {
+            const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
+            
+            const calcGroup = (selector, rate) => {
+                let total = 0;
+                document.querySelectorAll(selector).forEach(card => {
+                    const f = parseInt(card.querySelector('input:nth-child(2)').value)||0; // hacky selector, stick to class in prod
+                    // let's use proper class selection inside function to be safe
+                    const from = parseInt(card.querySelector('[class*="-from"]').value) || 0;
+                    const to = parseInt(card.querySelector('[class*="-to"]').value) || 0;
+                    const amt = parseFloat(card.querySelector('[class*="-amount"]').value) || 0;
+                    const days = to - from + 1;
+                    if(days > 0) total += (amt * days * rate * 12) / daysInYear / 100;
+                });
+                return total;
+            };
 
-        // Відновлюємо фокус
-        let newSelector = '';
-        if (isInt) newSelector = `.kdz-pay-int[data-day="${day}"]`;
-        if (isBody) newSelector = `.kdz-pay-body[data-day="${day}"]`;
-        if (isCheck) newSelector = `.kdz-is-credit[data-day="${day}"]`;
+            const i31 = calcGroup('#periods31 .period-card', 3.1);
+            const i62 = calcGroup('#periods62 .period-card', 6.2);
+            
+            const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
+            const iOd = calcGroup('#periodsOverdraft .period-card', odRate);
 
-        if (newSelector) {
-            const el = document.querySelector(newSelector);
-            if(el) {
-                el.focus();
-                // Для інпутів курсор в кінець (опціонально)
+            document.getElementById('interest31').textContent = i31.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = i62.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (i31 + i62).toFixed(2) + ' грн';
+            document.getElementById('appliedRate').textContent = odRate + '%';
+            document.getElementById('interestOverdraft').textContent = iOd.toFixed(2) + ' грн';
+            document.getElementById('resultCredit').style.display = 'block';
+        }
+
+        // === 2. INSTALLMENT LOGIC ===
+        function calculateInstallment() {
+            const amt = parseFloat(document.getElementById('amountInst').value) || 0;
+            const mos = parseInt(document.getElementById('monthsInst').value) || 0;
+            if (amt <= 0 || mos <= 0) return;
+
+            const fee = amt * 0.019;
+            const monthly = (amt / mos) + fee;
+            const over = fee * mos;
+            
+            document.getElementById('monthlyPayment').textContent = monthly.toFixed(2) + ' грн';
+            document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн';
+            document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн';
+            document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
+            document.getElementById('resultInst').style.display = 'block';
+        }
+
+        // === 3. KDZ INTERACTIVE LOGIC ===
+        
+        // State storage: { dayIndex: { int: 0, body: 0, isCredit: false } }
+        let kdzData = {};
+
+        function resetKdz() {
+            kdzData = {};
+            initKdzTable();
+        }
+
+        function initKdzTable() {
+            const days = parseInt(document.getElementById('kdzDays').value) || 14;
+            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
+            const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
+            
+            const tbody = document.querySelector('#kdzTable tbody');
+            tbody.innerHTML = '';
+            
+            let currentBody = startBody;
+            let accumulatedInt = 0;
+            let totalIntAccrued = 0;
+            let totalCommission = 0;
+            
+            for (let d = 1; d <= days; d++) {
+                // 1. Accrue Interest
+                const dailyInt = currentBody * rate / 100;
+                totalIntAccrued += dailyInt;
+                accumulatedInt += dailyInt;
+                
+                // 2. Get Payments from State
+                const payData = kdzData[d] || { int: 0, body: 0, isCredit: false };
+                const payInt = payData.int;
+                const payBody = payData.body;
+                
+                // 3. Calc Commission
+                if (payData.isCredit) {
+                    totalCommission += (payInt * 0.04);
+                }
+                
+                // 4. Apply Payments
+                // Payments logic: first pay off accrued interest, then body (simplified for calculator)
+                accumulatedInt -= payInt;
+                if (accumulatedInt < 0) accumulatedInt = 0; // Overpayment of interest not handled logic-wise, just capped
+                
+                const bodyBefore = currentBody;
+                currentBody -= payBody;
+                if (currentBody < 0) currentBody = 0;
+                
+                // 5. Render Row
+                const tr = document.createElement('tr');
+                if (payInt > 0 || payBody > 0) tr.classList.add('kdz-row-active');
+                
+                tr.innerHTML = `
+                    <td style="text-align: center; color: var(--color-text-secondary); font-size: 13px;">${d}</td>
+                    <td class="text-dim">${bodyBefore.toFixed(2)}</td>
+                    <td class="text-dim">+${dailyInt.toFixed(2)}</td>
+                    
+                    <td style="background-color: rgba(var(--color-teal-500-rgb), 0.02);">
+                        <input type="number" class="kdz-input input-int" 
+                               data-day="${d}" placeholder="0" 
+                               value="${payInt > 0 ? payInt : ''}">
+                    </td>
+                    
+                    <td style="background-color: rgba(var(--color-brown-600-rgb), 0.02);">
+                        <input type="number" class="kdz-input input-body" 
+                               data-day="${d}" placeholder="0" 
+                               value="${payBody > 0 ? payBody : ''}">
+                    </td>
+                    
+                    <td style="text-align: center;">
+                        <label class="kdz-checkbox-label" title="Оплата кредитними (+4% комісії)">
+                            <input type="checkbox" class="input-check" 
+                                   data-day="${d}" ${payData.isCredit ? 'checked' : ''}>
+                        </label>
+                    </td>
+                    
+                    <td class="text-bold">${currentBody.toFixed(2)}</td>
+                    <td style="color: ${accumulatedInt > 0.01 ? '#c62828' : '#2e7d32'}; font-weight: 500;">
+                        ${accumulatedInt.toFixed(2)}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            // 6. Update Totals
+            document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
+            document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
+            document.getElementById('liveCommission').textContent = totalCommission.toFixed(2) + ' грн';
+            
+            const totalToPay = currentBody + accumulatedInt;
+            document.getElementById('liveTotalToPay').textContent = totalToPay.toFixed(2) + ' грн';
+        }
+
+        // --- Event Delegation for Inputs ---
+        document.getElementById('kdzTable').addEventListener('input', (e) => {
+            if (e.target.classList.contains('kdz-input')) {
+                const day = e.target.getAttribute('data-day');
+                const val = parseFloat(e.target.value);
+                const isInt = e.target.classList.contains('input-int');
+                
+                if (!kdzData[day]) kdzData[day] = { int: 0, body: 0, isCredit: false };
+                
+                if (isInt) kdzData[day].int = isNaN(val) ? 0 : val;
+                else kdzData[day].body = isNaN(val) ? 0 : val;
+                
+                // Re-render but keep focus
+                saveFocusAndRender(e.target);
+            }
+        });
+
+        document.getElementById('kdzTable').addEventListener('change', (e) => {
+            if (e.target.classList.contains('input-check')) {
+                const day = e.target.getAttribute('data-day');
+                if (!kdzData[day]) kdzData[day] = { int: 0, body: 0, isCredit: false };
+                kdzData[day].isCredit = e.target.checked;
+                saveFocusAndRender(e.target);
+            }
+        });
+
+        function saveFocusAndRender(activeEl) {
+            const day = activeEl.getAttribute('data-day');
+            const isInt = activeEl.classList.contains('input-int');
+            const isBody = activeEl.classList.contains('input-body');
+            const isCheck = activeEl.classList.contains('input-check');
+            
+            initKdzTable();
+            
+            let selector = '';
+            if (isInt) selector = `.input-int[data-day="${day}"]`;
+            else if (isBody) selector = `.input-body[data-day="${day}"]`;
+            else if (isCheck) selector = `.input-check[data-day="${day}"]`;
+            
+            if (selector) {
+                const el = document.querySelector(selector);
+                if (el) el.focus();
             }
         }
-    }
 
-    // Запуск при старті
-    addPeriod31();
-    addPeriod62();
-    addPeriodOverdraft();
-</script>
+        // --- Init ---
+        addPeriod31();
+        addPeriod62();
+        addPeriodOverdraft();
+        // KDZ will init on tab click to save perf, or manually here
+    </script>
 </body>
 </html>
