@@ -196,10 +196,7 @@
             <button class="tab" data-tab="kdz" data-sub="Розрахунок вартості кредиту до зарплати">КДЗ (Калькулятор)</button>
         </div>
         
-        <!-- ... (Credit Limit and Installment sections remain unchanged) ... -->
-        <!-- ======================= -->
-        <!-- 1. КРЕДИТНИЙ ЛІМІТ      -->
-        <!-- ======================= -->
+        <!-- ... (Credit & Installment Tabs - Unchanged) ... -->
         <div class="tab-content active" id="credit">
             <div class="card">
                 <div class="card-header-row">
@@ -443,7 +440,7 @@
             });
         });
 
-        // CREDIT & INSTALLMENT JS (Hidden for brevity, same as before) ...
+        // CREDIT & INSTALLMENT JS ... (Standard blocks)
         function addPeriod31() { periodCounter31++; createPeriod('periods31', 'period31', periodCounter31, 25000); }
         function addPeriod62() { periodCounter62++; createPeriod('periods62', 'period62', periodCounter62, 25000); }
         function addPeriodOverdraft() { periodCounterOverdraft++; createPeriod('periodsOverdraft', 'periodOverdraft', periodCounterOverdraft, 2000); }
@@ -459,7 +456,7 @@
         function copyDetailsInst() { navigator.clipboard.writeText(document.getElementById('detailsLogInst').textContent).then(() => alert('Copied!')); }
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
-        // === KDZ LOGIC (FIXED) ===
+        // === KDZ LOGIC WITH TABLE LIMITER ===
         function resetKdz() {
             document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
             document.getElementById('kdzTotalPayInput').value = '';
@@ -495,24 +492,36 @@
             let currentBody = startBody;
             let accumulatedInt = 0;
             
-            // 1. Table Loop
             rows.forEach((row, index) => {
-                const isLastDay = (index === totalRows - 1);
                 let payInput = parseFloat(row.querySelector('.input-body').value) || 0;
                 const inputElem = row.querySelector('.input-body');
 
                 row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
                 
-                // Interest accrual
+                // Interest accrual (for previous days in real logic, but here we simplify 'morning body' base)
                 const dailyInt = currentBody * rate / 100;
                 accumulatedInt += dailyInt;
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 
-                // --- TABLE PAYMENT LOGIC ---
-                // Intermediate: Pays Body Only. 
-                // Last Day: Pays Body Only (User types in "Body Payment" column).
-                // But we must validate sum <= Debt logic visually.
+                // === VALIDATION: Max Payment ===
+                // If accumulated interest exists, we CANNOT pay off full body (must leave 0.01)
+                // If interest is 0 (or we are covering it fully externally?), rule says:
+                // "Intermediate days: Body Only payment."
+                // "Rule: Cannot zero out body if interest > 0".
                 
+                let maxAllowed = currentBody;
+                if (accumulatedInt > 0.001) {
+                    maxAllowed = Math.max(0, currentBody - 0.01);
+                }
+
+                if (payInput > maxAllowed) {
+                    payInput = maxAllowed;
+                    inputElem.value = payInput.toFixed(2); // Auto-correct input
+                    // We can also add visual cue
+                    inputElem.style.borderColor = "var(--color-error)";
+                    setTimeout(() => inputElem.style.borderColor = "", 1000);
+                }
+
                 // Apply payment to Body
                 currentBody -= payInput;
                 if(currentBody < 0) currentBody = 0;
@@ -521,7 +530,7 @@
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // 2. Final Settlement / "Total Payment" Field Logic
+            // 2. Final Settlement
             const totalDebt = currentBody + accumulatedInt;
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
 
@@ -529,28 +538,16 @@
             const isCredit = document.getElementById('kdzIsCredit').checked;
             const errorMsg = document.getElementById('kdzError');
 
-            // --- VALIDATION: Sum cannot exceed total debt ---
             if (totalPayment > totalDebt + 0.01) { 
                 errorMsg.classList.add('visible');
             } else {
                 errorMsg.classList.remove('visible');
             }
 
-            // --- PAYMENT DISTRIBUTION ---
+            // Payment logic: Interest first if Last Day/Full Repay (simulated by this field)
             let paymentForInterest = 0;
             let paymentForBody = 0;
 
-            // Rule: "Interest is paid in 2 cases: Full Repayment OR Last Day"
-            // The "Total Payment" field effectively acts as a settlement "Today" (at the end of the timeline).
-            // Since the timeline ends on the Last Day, this payment follows Last Day logic: Interest First.
-            
-            // Wait, does "Last Day" mean row N? Yes. 
-            // The bottom field is "Additional Payment" or "Total Settlement"? 
-            // It's labeled "Full Repayment". 
-            // If I pay PARTIAL here, does it pay interest?
-            // "Case 2: Last Day". Yes, if we are at end of term, interest is due.
-            // So logic: Priority to Interest.
-            
             if (totalPayment >= accumulatedInt) {
                 paymentForInterest = accumulatedInt;
                 paymentForBody = totalPayment - accumulatedInt;
