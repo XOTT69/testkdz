@@ -80,7 +80,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1080px;
             margin: 0 auto;
         }
 
@@ -154,7 +154,7 @@
             color: var(--color-text);
         }
 
-        input[type="number"] {
+        input[type="number"], select {
             width: 100%;
             padding: var(--space-12);
             border: 1px solid var(--color-border);
@@ -165,13 +165,12 @@
             transition: border-color 0.2s;
         }
 
-        input[type="number"]:focus {
+        input[type="number"]:focus, select:focus {
             outline: none;
             border-color: var(--color-primary);
         }
 
         .btn {
-            width: 100%;
             padding: var(--space-12) var(--space-24);
             background-color: var(--color-primary);
             color: white;
@@ -181,6 +180,10 @@
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.2s;
+        }
+
+        .btn.full {
+            width: 100%;
         }
 
         .btn:hover {
@@ -234,11 +237,11 @@
 
         .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.1fr 1.1fr;
             gap: var(--space-16);
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 800px) {
             .grid-2 {
                 grid-template-columns: 1fr;
             }
@@ -314,7 +317,6 @@
             }
         }
 
-        /* таблиця-графік КДЗ */
         .kdz-table {
             width: 100%;
             border-collapse: collapse;
@@ -343,12 +345,21 @@
             font-weight: 600;
             background-color: rgba(var(--color-teal-500-rgb), 0.04);
         }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid var(--color-border);
+            color: var(--color-text-secondary);
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🏦 Калькулятор monobank</h1>
-    <p class="subtitle">Розрахунок процентів за кредитним лімітом та КДЗ</p>
+    <p class="subtitle">Кредитний ліміт, розстрочка та КДЗ (Кредит «До завтра»)</p>
 
     <div class="tabs">
         <button class="tab active" data-tab="credit">Кредитний ліміт</button>
@@ -374,7 +385,7 @@
                 Ставка 3.1%
             </h3>
             <div id="periods31"></div>
-            <button class="btn" onclick="addPeriod31()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
+            <button class="btn full" onclick="addPeriod31()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
                 + Додати період 3.1%
             </button>
 
@@ -382,7 +393,7 @@
                 Ставка 6.2%
             </h3>
             <div id="periods62"></div>
-            <button class="btn" onclick="addPeriod62()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
+            <button class="btn full" onclick="addPeriod62()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
                 + Додати період 6.2%
             </button>
 
@@ -403,11 +414,11 @@
                 </div>
             </div>
             <div id="periodsOverdraft"></div>
-            <button class="btn" onclick="addPeriodOverdraft()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
+            <button class="btn full" onclick="addPeriodOverdraft()" style="background-color: rgba(var(--color-teal-500-rgb), 0.15); color: var(--color-primary); margin-bottom: var(--space-16);">
                 + Додати період перевищення ліміту
             </button>
 
-            <button class="btn" onclick="calculateCredit()">Розрахувати все разом</button>
+            <button class="btn full" onclick="calculateCredit()">Розрахувати все разом</button>
 
             <div class="result-section" id="resultCredit" style="display: none;">
                 <div class="result-item">
@@ -429,7 +440,7 @@
             </div>
 
             <div class="info-box">
-                ℹ️ Формула: (Сума × Кількість днів × Ставка% × 12) / 365(366) / 100. Перевищення ліміту: якщо на кінець місяця &lt; 1000 грн — 3.1%, якщо ≥ 1000 грн — 6.2%
+                ℹ️ Формула: (Сума × Кількість днів × Ставка% × 12) / 365(366) / 100. Перевищення ліміту: якщо на кінець місяця &lt; 1000 грн — 3.1%, якщо ≥ 1000 грн — 6.2%. [web:18]
             </div>
         </div>
     </div>
@@ -453,7 +464,7 @@
                 </div>
             </div>
 
-            <button class="btn" onclick="calculateInstallment()">Розрахувати</button>
+            <button class="btn full" onclick="calculateInstallment()">Розрахувати</button>
 
             <div class="result-section" id="resultInst" style="display: none;">
                 <div class="result-item">
@@ -475,7 +486,7 @@
             </div>
 
             <div class="info-box">
-                ℹ️ Комісія 1.9% від суми розстрочки щомісяця
+                ℹ️ Комісія 1.9% від суми розстрочки щомісяця. [web:39]
             </div>
         </div>
     </div>
@@ -488,53 +499,104 @@
             </h2>
 
             <div class="grid-2">
-                <div class="form-group">
-                    <label for="kdzBody">Тіло кредиту (грн)</label>
-                    <input type="number" id="kdzBody" value="5000" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="kdzDays">Кількість днів (2–30, макс 365)</label>
-                    <input type="number" id="kdzDays" value="14" min="1" max="365">
-                </div>
-            </div>
+                <!-- Ліва: параметри КДЗ -->
+                <div>
+                    <h3 style="margin-bottom: var(--space-12); font-size: 16px; font-weight: 600;">Параметри КДЗ</h3>
+                    <div class="form-group">
+                        <label for="kdzBody">Тіло кредиту (грн)</label>
+                        <input type="number" id="kdzBody" value="5000" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="kdzDays">Кількість днів (2–30, макс 365)</label>
+                        <input type="number" id="kdzDays" value="14" min="1" max="365">
+                    </div>
+                    <div class="form-group">
+                        <label>Ставка на день</label>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-8);">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background);">
+                                <input type="radio" name="kdzRate" value="0.3" checked style="width: auto;">
+                                0.3% на день
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background);">
+                                <input type="radio" name="kdzRate" value="0.5" style="width: auto;">
+                                0.5% на день
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn full" onclick="calculateKdz()">Розрахувати КДЗ</button>
 
-            <div class="form-group">
-                <label>Ставка на день</label>
-                <div style="display: flex; flex-direction: column; gap: var(--space-8);">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background);">
-                        <input type="radio" name="kdzRate" value="0.3" checked style="width: auto;">
-                        0.3% на день
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: var(--space-12); border: 1px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background);">
-                        <input type="radio" name="kdzRate" value="0.5" style="width: auto;">
-                        0.5% на день
-                    </label>
-                </div>
-            </div>
+                    <div class="result-section" id="resultKdz" style="display: none;">
+                        <div class="result-item">
+                            <span class="result-label">Тіло кредиту (початкове)</span>
+                            <span class="result-value" id="kdzBodyOut">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Всього нарахованих відсотків</span>
+                            <span class="result-value highlight" id="kdzInterestTotal">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Всього сплачених відсотків</span>
+                            <span class="result-value" id="kdzInterestPaidTotal">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Всього сплаченого тіла</span>
+                            <span class="result-value" id="kdzBodyPaidTotal">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Залишок тіла на кінець</span>
+                            <span class="result-value" id="kdzBodyRemain">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Всього до сплати (тіло + відсотки)</span>
+                            <span class="result-value" id="kdzTotalWithBody">0 грн</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Комісія 4% (з відсотків, сплачених з кредитних)</span>
+                            <span class="result-value" id="kdzCommission4">0 грн</span>
+                        </div>
+                    </div>
 
-            <button class="btn" onclick="calculateKdz()">Розрахувати КДЗ</button>
+                    <div class="info-box">
+                        ℹ️ Відсотки: тіло × ставка%/день. Проценти нараховуються на залишок на кінець дня. Ставки 0.3% або 0.5% на день. [web:21][web:30]
+                    </div>
+                </div>
 
-            <div class="result-section" id="resultKdz" style="display: none;">
-                <div class="result-item">
-                    <span class="result-label">Тіло кредиту</span>
-                    <span class="result-value" id="kdzBodyOut">0 грн</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">Всього відсотків (тільки відсотки)</span>
-                    <span class="result-value highlight" id="kdzInterestTotal">0 грн</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">Всього до сплати (тіло + відсотки)</span>
-                    <span class="result-value" id="kdzTotalWithBody">0 грн</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">Комісія 4% (якщо відсотки гасимо з кредитних)</span>
-                    <span class="result-value" id="kdzCommission4">0 грн</span>
-                </div>
-            </div>
+                <!-- Права: форма погашень -->
+                <div>
+                    <h3 style="margin-bottom: var(--space-12); font-size: 16px; font-weight: 600;">Заплановані погашення</h3>
+                    <div class="period-card" style="margin-bottom: var(--space-16);">
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label for="repayDay">День погашення</label>
+                                <input type="number" id="repayDay" value="14" min="1" max="365">
+                            </div>
+                            <div class="form-group">
+                                <label for="repayInterest">Погашення відсотків (грн)</label>
+                                <input type="number" id="repayInterest" value="0" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="repayBody">Погашення тіла (грн)</label>
+                                <input type="number" id="repayBody" value="0" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="repaySource">Джерело коштів</label>
+                            <select id="repaySource">
+                                <option value="own">Власні кошти</option>
+                                <option value="credit">Кредитні кошти (4% комісія від відсотків)</option>
+                            </select>
+                        </div>
+                        <button class="btn full" type="button" onclick="addKdzRepayment()">+ Додати погашення</button>
+                        <div class="info-box" style="margin-top: var(--space-12);">
+                            Відсотки по КДЗ списуються наступного дня після дати погашення. Комісія 4% — якщо відсотки списані з кредитних коштів. [web:18][web:30]
+                        </div>
+                    </div>
 
-            <div class="info-box">
-                ℹ️ Формула: відсотки за день = тіло × ставка% ÷ 100. Всього відсотків = сума денних відсотків за кожен день користування. Ставки 0.3% або 0.5% на день. [web:21][web:27]
+                    <div class="result-section" id="kdzRepaymentsListSection" style="display:none;">
+                        <h4 style="margin-bottom: var(--space-12); font-size: 14px; font-weight: 600;">Додані погашення</h4>
+                        <div id="kdzRepaymentsList" style="font-size: 13px;"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="result-section" id="kdzScheduleSection" style="display:none; margin-top: var(--space-24);">
@@ -549,15 +611,17 @@
                             <th>Тіло на початок</th>
                             <th>Ставка %/день</th>
                             <th>Відсотки за день</th>
+                            <th>Погашення відсотків</th>
+                            <th>Погашення тіла</th>
+                            <th>Тіло на кінець</th>
                             <th>Накопичені відсотки</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <!-- рядки генеруються JS -->
                         </tbody>
                         <tfoot>
                         <tr>
-                            <td colspan="4">Разом відсотків</td>
+                            <td colspan="7">Разом нарахованих відсотків</td>
                             <td id="kdzScheduleTotal">0 грн</td>
                         </tr>
                         </tfoot>
@@ -580,7 +644,6 @@
         tab.addEventListener('click', () => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
             tab.classList.add('active');
             const tabId = tab.getAttribute('data-tab');
             document.getElementById(tabId).classList.add('active');
@@ -595,34 +658,31 @@
         periodCard.className = 'period-card';
         periodCard.id = 'period31-' + periodCounter31;
         periodCard.innerHTML = `
-                <div class="period-header">
-                    <span class="period-title">Період ${periodCounter31}</span>
-                    <button class="remove-btn" onclick="removePeriod31(${periodCounter31})" title="Видалити період">×</button>
+            <div class="period-header">
+                <span class="period-title">Період ${periodCounter31}</span>
+                <button class="remove-btn" onclick="removePeriod31(${periodCounter31})" title="Видалити період">×</button>
+            </div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>День від</label>
+                    <input type="number" class="debt31-from" value="1" min="1" max="31">
                 </div>
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label>День від</label>
-                        <input type="number" class="debt31-from" value="1" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>День до</label>
-                        <input type="number" class="debt31-to" value="10" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>Сума боргу (грн)</label>
-                        <input type="number" class="debt31-amount" value="25000" step="0.01" min="0">
-                    </div>
+                <div class="form-group">
+                    <label>День до</label>
+                    <input type="number" class="debt31-to" value="10" min="1" max="31">
                 </div>
-            `;
+                <div class="form-group">
+                    <label>Сума боргу (грн)</label>
+                    <input type="number" class="debt31-amount" value="25000" step="0.01" min="0">
+                </div>
+            </div>
+        `;
         periodsDiv.appendChild(periodCard);
     }
 
-    // Видалення періоду для 3.1%
     function removePeriod31(id) {
         const period = document.getElementById('period31-' + id);
-        if (period) {
-            period.remove();
-        }
+        if (period) period.remove();
     }
 
     // Додавання періоду для 6.2%
@@ -633,42 +693,73 @@
         periodCard.className = 'period-card';
         periodCard.id = 'period62-' + periodCounter62;
         periodCard.innerHTML = `
-                <div class="period-header">
-                    <span class="period-title">Період ${periodCounter62}</span>
-                    <button class="remove-btn" onclick="removePeriod62(${periodCounter62})" title="Видалити період">×</button>
+            <div class="period-header">
+                <span class="period-title">Період ${periodCounter62}</span>
+                <button class="remove-btn" onclick="removePeriod62(${periodCounter62})" title="Видалити період">×</button>
+            </div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>День від</label>
+                    <input type="number" class="debt62-from" value="1" min="1" max="31">
                 </div>
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label>День від</label>
-                        <input type="number" class="debt62-from" value="1" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>День до</label>
-                        <input type="number" class="debt62-to" value="10" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>Сума боргу (грн)</label>
-                        <input type="number" class="debt62-amount" value="25000" step="0.01" min="0">
-                    </div>
+                <div class="form-group">
+                    <label>День до</label>
+                    <input type="number" class="debt62-to" value="10" min="1" max="31">
                 </div>
-            `;
+                <div class="form-group">
+                    <label>Сума боргу (грн)</label>
+                    <input type="number" class="debt62-amount" value="25000" step="0.01" min="0">
+                </div>
+            </div>
+        `;
         periodsDiv.appendChild(periodCard);
     }
 
-    // Видалення періоду для 6.2%
     function removePeriod62(id) {
         const period = document.getElementById('period62-' + id);
-        if (period) {
-            period.remove();
-        }
+        if (period) period.remove();
     }
 
-    // Об'єднаний розрахунок для кредитного ліміту
+    // Овердрафт
+    function addPeriodOverdraft() {
+        periodCounterOverdraft++;
+        const periodsDiv = document.getElementById('periodsOverdraft');
+        const periodCard = document.createElement('div');
+        periodCard.className = 'period-card';
+        periodCard.id = 'periodOverdraft-' + periodCounterOverdraft;
+        periodCard.innerHTML = `
+            <div class="period-header">
+                <span class="period-title">Період ${periodCounterOverdraft}</span>
+                <button class="remove-btn" onclick="removePeriodOverdraft(${periodCounterOverdraft})" title="Видалити період">×</button>
+            </div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>День від</label>
+                    <input type="number" class="overdraft-from" value="1" min="1" max="31">
+                </div>
+                <div class="form-group">
+                    <label>День до</label>
+                    <input type="number" class="overdraft-to" value="10" min="1" max="31">
+                </div>
+                <div class="form-group">
+                    <label>Сума перевищення (грн)</label>
+                    <input type="number" class="overdraft-amount" value="2000" step="0.01" min="0">
+                </div>
+            </div>
+        `;
+        periodsDiv.appendChild(periodCard);
+    }
+
+    function removePeriodOverdraft(id) {
+        const period = document.getElementById('periodOverdraft-' + id);
+        if (period) period.remove();
+    }
+
+    // Кредитний ліміт розрахунок
     function calculateCredit() {
         const isLeap = document.getElementById('leapYearCredit').checked;
         const daysInYear = isLeap ? 366 : 365;
 
-        // Розрахунок 3.1%
         const periodsDiv31 = document.getElementById('periods31');
         const periodCards31 = periodsDiv31.querySelectorAll('.period-card');
         let totalInterest31 = 0;
@@ -677,7 +768,6 @@
             const from = parseInt(card.querySelector('.debt31-from').value) || 0;
             const to = parseInt(card.querySelector('.debt31-to').value) || 0;
             const amount = parseFloat(card.querySelector('.debt31-amount').value) || 0;
-
             const days = to - from + 1;
             if (days > 0) {
                 const interest = (amount * days * 3.1 * 12) / daysInYear / 100;
@@ -685,7 +775,6 @@
             }
         });
 
-        // Розрахунок 6.2%
         const periodsDiv62 = document.getElementById('periods62');
         const periodCards62 = periodsDiv62.querySelectorAll('.period-card');
         let totalInterest62 = 0;
@@ -694,7 +783,6 @@
             const from = parseInt(card.querySelector('.debt62-from').value) || 0;
             const to = parseInt(card.querySelector('.debt62-to').value) || 0;
             const amount = parseFloat(card.querySelector('.debt62-amount').value) || 0;
-
             const days = to - from + 1;
             if (days > 0) {
                 const interest = (amount * days * 6.2 * 12) / daysInYear / 100;
@@ -702,7 +790,6 @@
             }
         });
 
-        // Розрахунок овердрафту
         const overdraftRange = document.querySelector('input[name="overdraftRange"]:checked').value;
         const rate = overdraftRange === 'more' ? 6.2 : 3.1;
 
@@ -714,7 +801,6 @@
             const from = parseInt(card.querySelector('.overdraft-from').value) || 0;
             const to = parseInt(card.querySelector('.overdraft-to').value) || 0;
             const amount = parseFloat(card.querySelector('.overdraft-amount').value) || 0;
-
             const days = to - from + 1;
             if (days > 0) {
                 const interest = (amount * days * rate * 12) / daysInYear / 100;
@@ -732,10 +818,11 @@
         document.getElementById('resultCredit').style.display = 'block';
     }
 
-    // Розрахунок розстрочки
+    // Розстрочка
     function calculateInstallment() {
         const amount = parseFloat(document.getElementById('amountInst').value) || 0;
         const months = parseInt(document.getElementById('monthsInst').value) || 0;
+        if (amount <= 0 || months <= 0) return;
 
         const monthlyFee = amount * 0.019;
         const monthlyPayment = (amount / months) + monthlyFee;
@@ -749,50 +836,10 @@
         document.getElementById('resultInst').style.display = 'block';
     }
 
-    // Додавання періоду для овердрафту
-    function addPeriodOverdraft() {
-        periodCounterOverdraft++;
-        const periodsDiv = document.getElementById('periodsOverdraft');
-        const periodCard = document.createElement('div');
-        periodCard.className = 'period-card';
-        periodCard.id = 'periodOverdraft-' + periodCounterOverdraft;
-        periodCard.innerHTML = `
-                <div class="period-header">
-                    <span class="period-title">Період ${periodCounterOverdraft}</span>
-                    <button class="remove-btn" onclick="removePeriodOverdraft(${periodCounterOverdraft})" title="Видалити період">×</button>
-                </div>
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label>День від</label>
-                        <input type="number" class="overdraft-from" value="1" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>День до</label>
-                        <input type="number" class="overdraft-to" value="10" min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label>Сума перевищення (грн)</label>
-                        <input type="number" class="overdraft-amount" value="2000" step="0.01" min="0">
-                    </div>
-                </div>
-            `;
-        periodsDiv.appendChild(periodCard);
-    }
-
-    // Видалення періоду для овердрафту
-    function removePeriodOverdraft(id) {
-        const period = document.getElementById('periodOverdraft-' + id);
-        if (period) {
-            period.remove();
-        }
-    }
-
-    // Ініціалізація з одним періодом для кожної ставки
     addPeriod31();
     addPeriod62();
     addPeriodOverdraft();
 
-    // Автоматичний розрахунок при зміні значень для розстрочки
     ['amountInst', 'monthsInst'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => {
             if (document.getElementById('resultInst').style.display === 'block') {
@@ -801,49 +848,151 @@
         });
     });
 
-    // --- КДЗ: розрахунок тільки відсотків, відсотки+тіло, комісія 4% + графік по днях ---
+    // --- КДЗ: форма погашень + графік по днях ---
+
+    const kdzRepayments = [];
+
+    function renderRepaymentsList() {
+        const section = document.getElementById('kdzRepaymentsListSection');
+        const container = document.getElementById('kdzRepaymentsList');
+        container.innerHTML = '';
+        if (kdzRepayments.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = 'block';
+        kdzRepayments
+            .sort((a, b) => a.day - b.day)
+            .forEach((r, idx) => {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.padding = '4px 0';
+                div.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+                const side = document.createElement('div');
+                side.textContent =
+                    `День ${r.day}: відсотки ${r.interest.toFixed(2)} грн, тіло ${r.body.toFixed(2)} грн`;
+                const pill = document.createElement('span');
+                pill.className = 'pill';
+                pill.textContent = r.source === 'credit' ? 'кредитні' : 'власні';
+                const del = document.createElement('button');
+                del.textContent = '×';
+                del.className = 'remove-btn';
+                del.style.fontSize = '14px';
+                del.onclick = () => {
+                    kdzRepayments.splice(idx, 1);
+                    renderRepaymentsList();
+                };
+                const right = document.createElement('div');
+                right.style.display = 'flex';
+                right.style.alignItems = 'center';
+                right.style.gap = '8px';
+                right.appendChild(pill);
+                right.appendChild(del);
+                div.appendChild(side);
+                div.appendChild(right);
+                container.appendChild(div);
+            });
+    }
+
+    function addKdzRepayment() {
+        const day = parseInt(document.getElementById('repayDay').value) || 0;
+        const interest = parseFloat(document.getElementById('repayInterest').value) || 0;
+        const body = parseFloat(document.getElementById('repayBody').value) || 0;
+        const source = document.getElementById('repaySource').value;
+
+        if (day <= 0) return;
+        if (interest <= 0 && body <= 0) return;
+
+        kdzRepayments.push({ day, interest, body, source });
+        renderRepaymentsList();
+    }
+
     function calculateKdz() {
-        const body = parseFloat(document.getElementById('kdzBody').value) || 0;
+        const initialBody = parseFloat(document.getElementById('kdzBody').value) || 0;
         const days = parseInt(document.getElementById('kdzDays').value) || 0;
         const rate = parseFloat(document.querySelector('input[name="kdzRate"]:checked').value) || 0;
 
-        if (body <= 0 || days <= 0) {
+        if (initialBody <= 0 || days <= 0) {
             document.getElementById('resultKdz').style.display = 'none';
             document.getElementById('kdzScheduleSection').style.display = 'none';
             return;
         }
 
-        let totalInterest = 0;
-        let accumulated = 0;
-
         const tbody = document.querySelector('#kdzScheduleTable tbody');
         tbody.innerHTML = '';
 
+        let body = initialBody;
+        let totalInterest = 0;
+        let totalInterestPaid = 0;
+        let totalBodyPaid = 0;
+        let totalInterestPaidFromCredit = 0;
+        let accumulatedInterest = 0;
+
+        const repayMap = {};
+        kdzRepayments.forEach(r => {
+            if (!repayMap[r.day]) repayMap[r.day] = [];
+            repayMap[r.day].push(r);
+        });
+
         for (let d = 1; d <= days; d++) {
             const dailyInterest = body * rate / 100;
-            accumulated += dailyInterest;
             totalInterest += dailyInterest;
+            accumulatedInterest += dailyInterest;
+
+            let payInterest = 0;
+            let payBody = 0;
+            let payInterestFromCredit = 0;
+
+            if (repayMap[d]) {
+                repayMap[d].forEach(r => {
+                    const i = r.interest || 0;
+                    const b = r.body || 0;
+                    payInterest += i;
+                    payBody += b;
+                    if (r.source === 'credit') {
+                        payInterestFromCredit += i;
+                    }
+                });
+            }
+
+            if (payInterest > dailyInterest) payInterest = dailyInterest;
+            if (payBody > body) payBody = body;
+
+            totalInterestPaid += payInterest;
+            totalBodyPaid += payBody;
+            totalInterestPaidFromCredit += payInterestFromCredit;
+
+            body = body - payBody;
+            accumulatedInterest -= payInterest;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${d}</td>
-                <td>${body.toFixed(2)} грн</td>
+                <td>${(body + payBody).toFixed(2)} грн</td>
                 <td>${rate.toFixed(2)}%</td>
                 <td>${dailyInterest.toFixed(2)} грн</td>
-                <td>${accumulated.toFixed(2)} грн</td>
+                <td>${payInterest.toFixed(2)} грн</td>
+                <td>${payBody.toFixed(2)} грн</td>
+                <td>${body.toFixed(2)} грн</td>
+                <td>${accumulatedInterest.toFixed(2)} грн</td>
             `;
             tbody.appendChild(tr);
         }
 
-        document.getElementById('kdzScheduleTotal').textContent = totalInterest.toFixed(2) + ' грн';
+        const commission4 = totalInterestPaidFromCredit * 0.04;
+        const remainingDebt = body + accumulatedInterest;
+        const totalWithBody = initialBody + totalInterest;
 
-        const totalWithBody = body + totalInterest;
-        const commission4 = totalInterest * 0.04;
-
-        document.getElementById('kdzBodyOut').textContent = body.toFixed(2) + ' грн';
+        document.getElementById('kdzBodyOut').textContent = initialBody.toFixed(2) + ' грн';
         document.getElementById('kdzInterestTotal').textContent = totalInterest.toFixed(2) + ' грн';
+        document.getElementById('kdzInterestPaidTotal').textContent = totalInterestPaid.toFixed(2) + ' грн';
+        document.getElementById('kdzBodyPaidTotal').textContent = totalBodyPaid.toFixed(2) + ' грн';
+        document.getElementById('kdzBodyRemain').textContent = body.toFixed(2) + ' грн';
         document.getElementById('kdzTotalWithBody').textContent = totalWithBody.toFixed(2) + ' грн';
         document.getElementById('kdzCommission4').textContent = commission4.toFixed(2) + ' грн';
+        document.getElementById('kdzScheduleTotal').textContent = totalInterest.toFixed(2) + ' грн';
 
         document.getElementById('resultKdz').style.display = 'block';
         document.getElementById('kdzScheduleSection').style.display = 'block';
