@@ -700,4 +700,115 @@
             document.getElementById('monthlyPayment').textContent = monthlyTotal.toFixed(2) + ' грн';
             document.getElementById('monthlyFee').textContent = fee.toFixed(2) + ' грн';
             document.getElementById('totalOverpayment').textContent = over.toFixed(2) + ' грн';
-            document.getElementById('totalInstall
+            document.getElementById('totalInstallment').textContent = (amt + over).toFixed(2) + ' грн';
+            document.getElementById('resultInst').style.display = 'block';
+
+            // Generate Schedule Log
+            let logText = `СУМА: ${amt.toFixed(2)} грн | ТЕРМІН: ${mos} міс\n`;
+            logText += `Щомісячна комісія (1.9%): ${fee.toFixed(2)} грн\n\n`;
+            
+            for (let i = 1; i <= mos; i++) {
+                logText += `Місяць ${i}: ${monthlyTotal.toFixed(2)} грн (тіло ${monthlyPrincipal.toFixed(2)} + комісія ${fee.toFixed(2)})\n`;
+            }
+            logText += `\nЗАГАЛОМ ДО СПЛАТИ: ${(amt + over).toFixed(2)} грн`;
+            
+            document.getElementById('detailsLogInst').textContent = logText;
+        }
+
+        function toggleDetailsInst() {
+            const el = document.getElementById('detailsAreaInst');
+            if(el.style.display === 'none') el.style.display = 'block';
+            else el.style.display = 'none';
+        }
+
+        function copyDetailsInst() {
+            const text = document.getElementById('detailsLogInst').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Графік скопійовано!');
+            });
+        }
+        
+        function resetInst() {
+            document.getElementById('amountInst').value = '30000';
+            document.getElementById('monthsInst').value = '6';
+            document.getElementById('resultInst').style.display = 'none';
+        }
+
+        // KDZ COMPACT
+        function resetKdz() {
+            document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
+            document.getElementById('kdzPayInterest').value = '';
+            document.getElementById('kdzIsCredit').checked = false;
+            recalculateKdz();
+        }
+
+        function rebuildKdzTable() {
+            let days = parseInt(document.getElementById('kdzDays').value) || 14;
+            
+            // Limit to 30 days
+            if (days > 30) {
+                days = 30;
+                document.getElementById('kdzDays').value = 30;
+            }
+
+            const tbody = document.getElementById('kdzTbody');
+            tbody.innerHTML = '';
+            for (let d = 1; d <= days; d++) {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-day', d);
+                tr.innerHTML = `
+                    <td style="text-align: center; color: var(--color-text-secondary);">${d}</td>
+                    <td class="cell-body-start text-dim">0.00</td>
+                    <td class="cell-int-daily text-dim">0.00</td>
+                    <td style="background-color: rgba(94, 82, 64, 0.02);"><input type="number" class="kdz-input input-body" placeholder="0"></td>
+                    <td class="cell-body-end text-bold">0.00</td>
+                    <td class="cell-int-accum" style="font-weight: 500;">0.00</td>`;
+                tbody.appendChild(tr);
+            }
+            recalculateKdz();
+        }
+
+        function recalculateKdz() {
+            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
+            const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
+            const rows = document.querySelectorAll('#kdzTbody tr');
+            
+            let currentBody = startBody;
+            let accumulatedInt = 0;
+            let totalIntAccrued = 0;
+            
+            rows.forEach(row => {
+                const payBody = parseFloat(row.querySelector('.input-body').value) || 0;
+                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
+                
+                const dailyInt = currentBody * rate / 100;
+                totalIntAccrued += dailyInt;
+                accumulatedInt += dailyInt;
+                
+                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
+                
+                currentBody -= payBody;
+                if(currentBody < 0) currentBody = 0;
+                
+                row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
+                row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
+            });
+
+            const payInterest = parseFloat(document.getElementById('kdzPayInterest').value) || 0;
+            const isCredit = document.getElementById('kdzIsCredit').checked;
+            const commission = isCredit ? payInterest * 0.04 : 0;
+            let remainingInt = accumulatedInt - payInterest;
+            if(remainingInt < 0) remainingInt = 0; 
+            
+            document.getElementById('liveBodyRemain').textContent = currentBody.toFixed(2) + ' грн';
+            document.getElementById('liveInterestTotal').textContent = totalIntAccrued.toFixed(2) + ' грн';
+            document.getElementById('liveInterestPaid').textContent = payInterest.toFixed(2) + ' грн';
+            document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
+            document.getElementById('liveTotalToPay').textContent = (currentBody + remainingInt).toFixed(2) + ' грн';
+        }
+
+        document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
+        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); 
+    </script>
+</body>
+</html>
