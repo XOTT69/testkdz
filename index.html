@@ -17,6 +17,11 @@
             --color-border: rgba(94, 82, 64, 0.2);
             --color-card-border: rgba(94, 82, 64, 0.12);
             
+            /* SLIDER COLORS (Mono-style) */
+            --color-slider-track: #e6e6e6;
+            --color-slider-fill: #ea5b5b; /* Mono reddish/pink */
+            --color-slider-thumb: #ffffff;
+            
             /* COMPACT SPACING SYSTEM */
             --space-xs: 4px;
             --space-sm: 8px;
@@ -120,10 +125,59 @@
             background-color: var(--color-background);
             color: var(--color-text);
             transition: border-color 0.2s;
-            height: 32px;
+            height: 36px; /* slightly taller for better touch targets */
             font-family: inherit;
         }
         input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
+        
+        /* --- CUSTOM SLIDER STYLES --- */
+        .slider-container {
+            width: 100%;
+            padding: 10px 0;
+            position: relative;
+        }
+        .slider-value-display {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 8px;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--color-text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        /* The slider itself */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--color-slider-track);
+            border-radius: 2px;
+            outline: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            border: none; /* Remove default border */
+        }
+        /* Slider Thumb (Handle) - Webkit */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--color-white);
+            border: 2px solid var(--color-slider-fill);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            margin-top: -8px; /* centers thumb on track */
+            position: relative;
+            z-index: 2;
+        }
+        /* Slider Track Fill - Dynamic via JS or CSS trick (Using simple CSS variable for now doesn't work well cross-browser without JS, so will use JS to update background-image gradient) */
         
         /* Compact Buttons */
         .btn {
@@ -392,19 +446,25 @@
                     </button>
                 </div>
                 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="amountInst">Сума (грн)</label>
-                        <input type="number" id="amountInst" value="30000" step="0.01" min="0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="monthsInst">Місяців</label>
-                        <input type="number" id="monthsInst" value="6" min="1" max="24">
+                <div class="form-group">
+                    <label for="amountInst">Сума (грн)</label>
+                    <input type="number" id="amountInst" value="30000" step="0.01" min="0" oninput="liveUpdateInst()">
+                </div>
+
+                <!-- Custom Slider -->
+                <div class="form-group" style="margin-top: var(--space-xl);">
+                    <label>Кількість платежів</label>
+                    <div class="slider-container">
+                        <div class="slider-value-display" id="monthsDisplay">6</div>
+                        <input type="range" id="monthsInst" min="3" max="24" value="6" oninput="updateSliderVisuals()">
+                        <div class="slider-labels">
+                            <span>3 платежі</span>
+                            <span>24 платежі</span>
+                        </div>
                     </div>
                 </div>
                 
-                <button class="btn" onclick="calculateInstallment()">Розрахувати</button>
+                <button class="btn" onclick="calculateInstallment()" style="margin-top: var(--space-sm);">Розрахувати</button>
                 
                 <div class="result-section" id="resultInst" style="display: none;">
                     <div class="result-item">
@@ -723,11 +783,42 @@
             });
         }
 
-        // INSTALLMENT
+        // INSTALLMENT - SLIDER LOGIC
+        function updateSliderVisuals() {
+            const slider = document.getElementById('monthsInst');
+            const display = document.getElementById('monthsDisplay');
+            const val = slider.value;
+            
+            // Update big number display
+            display.textContent = val;
+            
+            // Calculate gradient percentage
+            const min = slider.min;
+            const max = slider.max;
+            const percentage = ((val - min) / (max - min)) * 100;
+            
+            // Update track background gradient to simulate fill
+            slider.style.background = `linear-gradient(to right, #ea5b5b 0%, #ea5b5b ${percentage}%, #e6e6e6 ${percentage}%, #e6e6e6 100%)`;
+            
+            // Live update calculation if results are visible
+            if(document.getElementById('resultInst').style.display === 'block') {
+                calculateInstallment();
+            }
+        }
+        
+        // Helper to update calculations on amount change too
+        function liveUpdateInst() {
+            if(document.getElementById('resultInst').style.display === 'block') {
+                calculateInstallment();
+            }
+        }
+
         function calculateInstallment() {
             const amt = parseFloat(document.getElementById('amountInst').value) || 0;
             const mos = parseInt(document.getElementById('monthsInst').value) || 0;
+            
             if (amt <= 0 || mos <= 0) return;
+            
             const fee = amt * 0.019;
             const monthlyPrincipal = amt / mos;
             const monthlyTotal = monthlyPrincipal + fee;
@@ -766,7 +857,10 @@
         
         function resetInst() {
             document.getElementById('amountInst').value = '30000';
-            document.getElementById('monthsInst').value = '6';
+            const slider = document.getElementById('monthsInst');
+            slider.value = 6;
+            updateSliderVisuals(); // Reset visual slider
+            
             document.getElementById('resultInst').style.display = 'none';
         }
 
@@ -842,6 +936,9 @@
             document.getElementById('liveCommission').textContent = commission.toFixed(2) + ' грн';
             document.getElementById('liveTotalToPay').textContent = (currentBody + remainingInt).toFixed(2) + ' грн';
         }
+
+        // Initialize Slider
+        updateSliderVisuals();
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
         addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); 
