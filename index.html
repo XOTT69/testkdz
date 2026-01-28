@@ -17,14 +17,11 @@
             --color-card-border: rgba(94, 82, 64, 0.12);
             --color-error: #e54d4d;
             --color-success: #27ae60;
-            
-            --color-slider-track: #e6e6e6;
-            --color-slider-fill: #ea5b5b;
-            --color-slider-thumb: #ffffff;
+            --color-black-card: #111;
+            --color-iron-card: #5e6b75;
             
             --space-xs: 4px; --space-sm: 8px; --space-md: 12px; --space-lg: 16px; --space-xl: 20px;
             --radius-base: 6px; --radius-lg: 8px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
             --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         
@@ -55,19 +52,20 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .card { background-color: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-card-border); padding: var(--space-lg); box-shadow: var(--shadow-sm); margin-bottom: var(--space-lg); }
-        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); min-height: 32px; }
+        .card { background-color: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-card-border); padding: var(--space-lg); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: var(--space-lg); }
+        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); min-height: 32px; flex-wrap: wrap; gap: 8px; }
         .form-group { margin-bottom: var(--space-md); }
         label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 13px; color: var(--color-text); }
         
         input[type="number"], input[type="date"], select { width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-base); font-size: 14px; background-color: var(--color-background); color: var(--color-text); transition: border-color 0.2s; height: 36px; font-family: inherit; }
         input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
         
+        /* Slider styles */
         .slider-container { width: 100%; padding: 10px 0; position: relative; }
         .slider-value-display { font-size: 24px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
         .slider-labels { display: flex; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; margin-top: 4px; }
-        input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--color-slider-track); border-radius: 2px; outline: none; padding: 0; margin: 0; cursor: pointer; border: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--color-white); border: 2px solid var(--color-slider-fill); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: -8px; position: relative; z-index: 2; }
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: #e6e6e6; border-radius: 2px; outline: none; padding: 0; margin: 0; cursor: pointer; border: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid #ea5b5b; cursor: pointer; margin-top: -8px; position: relative; z-index: 2; }
         
         .btn { width: 100%; padding: 8px 16px; background-color: var(--color-primary); color: white; border: none; border-radius: var(--radius-base); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; height: 36px; }
         .btn:hover { background-color: var(--color-primary-hover); }
@@ -112,13 +110,17 @@
         .effective-val { font-size: 10px; color: var(--color-text-secondary); display: block; line-height: 1; text-align: right; margin-top: 2px; }
         .commission-val { color: var(--color-error); }
         
-        /* New Checkbox Style for Table */
         .checkbox-cell { text-align: center; }
         .custom-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primary); }
 
-        .payment-section { background-color: rgba(33, 128, 141, 0.04); border: 1px solid rgba(33, 128, 141, 0.2); border-radius: var(--radius-base); padding: var(--space-md); margin-top: var(--space-lg); }
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
         .error-message.visible { display: block; }
+        
+        /* Card Type Toggle */
+        .card-type-toggle { display: inline-flex; background: var(--color-background); border: 1px solid var(--color-border); border-radius: 20px; padding: 2px; height: 32px; }
+        .toggle-option { padding: 0 16px; display: flex; align-items: center; cursor: pointer; border-radius: 16px; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); transition: all 0.2s; }
+        .toggle-option.selected-black { background-color: var(--color-black-card); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .toggle-option.selected-iron { background-color: var(--color-iron-card); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -136,7 +138,13 @@
         <div class="tab-content active" id="credit">
             <div class="card">
                 <div class="card-header-row">
-                    <h2>Кредитний ліміт</h2>
+                    <div style="display:flex; align-items:center; gap: 12px;">
+                        <h2>Кредитний ліміт</h2>
+                        <div class="card-type-toggle">
+                            <div class="toggle-option selected-black" id="optBlack" onclick="switchCard('black')">Black</div>
+                            <div class="toggle-option" id="optIron" onclick="switchCard('iron')">IRON</div>
+                        </div>
+                    </div>
                     <div style="display: flex; gap: var(--space-md); align-items: center;">
                         <label style="display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; cursor: pointer;">
                             <input type="checkbox" id="leapYearCredit" style="width: auto;"> 366 днів
@@ -144,22 +152,25 @@
                         <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetCredit()">🔄 Очистити</button>
                     </div>
                 </div>
-                <h3>Ставка 3.1%</h3>
-                <div id="periods31"></div>
-                <button class="btn btn-ghost" onclick="addPeriod31()">+ Додати період 3.1%</button>
                 
-                <h3>Ставка 6.2%</h3>
+                <h3 id="labelStandard">Ставка 3.1%</h3>
+                <div id="periods31"></div>
+                <button class="btn btn-ghost" onclick="addPeriod31()">+ Додати період (стандартна)</button>
+                
+                <h3 id="labelPenalty">Ставка 6.2%</h3>
                 <div id="periods62"></div>
-                <button class="btn btn-ghost" onclick="addPeriod62()">+ Додати період 6.2%</button>
+                <button class="btn btn-ghost" onclick="addPeriod62()">+ Додати період (підвищена)</button>
                 
                 <h3>Сума перевищеного ліміту</h3>
                 <div class="form-group">
                     <div style="display: flex; gap: var(--space-md);">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-base); flex: 1; background-color: var(--color-background); height: 36px; margin: 0;">
-                            <input type="radio" name="overdraftRange" value="less" checked style="width: auto;"> Менше 1000 грн (3.1%)
+                            <input type="radio" name="overdraftRange" value="less" checked style="width: auto;"> 
+                            <span id="labelOdLess">Менше 1000 грн (3.1%)</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-base); flex: 1; background-color: var(--color-background); height: 36px; margin: 0;">
-                            <input type="radio" name="overdraftRange" value="more" style="width: auto;"> ≥ 1000 грн (6.2%)
+                            <input type="radio" name="overdraftRange" value="more" style="width: auto;"> 
+                            <span id="labelOdMore">≥ 1000 грн (6.2%)</span>
                         </label>
                     </div>
                 </div>
@@ -170,10 +181,10 @@
                 
                 <div class="result-section" id="resultCredit" style="display: none;">
                     <div class="result-item">
-                        <span class="result-label">Відсотки 3.1%</span> <span class="result-value" id="interest31">0 грн</span>
+                        <span class="result-label" id="resLabelStandard">Відсотки (стандарт)</span> <span class="result-value" id="interest31">0 грн</span>
                     </div>
                     <div class="result-item">
-                        <span class="result-label">Відсотки 6.2%</span> <span class="result-value" id="interest62">0 грн</span>
+                        <span class="result-label" id="resLabelPenalty">Відсотки (підвищена)</span> <span class="result-value" id="interest62">0 грн</span>
                     </div>
                     <div class="result-item" style="border-top: 2px solid var(--color-border); padding-top: var(--space-sm); margin-top: 4px;">
                         <span class="result-label" style="font-weight: 600;">Всього за кредитний ліміт</span> <span class="result-value highlight" id="totalInterest">0 грн</span>
@@ -285,6 +296,40 @@
 
         let periodCounter31 = 0; let periodCounter62 = 0; let periodCounterOverdraft = 0;
         
+        // CARD TYPE CONFIG
+        let activeCard = 'black'; 
+        let rateStandard = 3.1;
+        let ratePenalty = 6.2;
+
+        function switchCard(type) {
+            activeCard = type;
+            const btnBlack = document.getElementById('optBlack');
+            const btnIron = document.getElementById('optIron');
+            
+            if (type === 'black') {
+                btnBlack.classList.add('selected-black');
+                btnIron.classList.remove('selected-iron');
+                rateStandard = 3.1;
+                ratePenalty = 6.2;
+            } else {
+                btnBlack.classList.remove('selected-black');
+                btnIron.classList.add('selected-iron');
+                rateStandard = 2.9;
+                ratePenalty = 5.8;
+            }
+            updateRateLabels();
+            if(document.getElementById('resultCredit').style.display === 'block') calculateCredit();
+        }
+
+        function updateRateLabels() {
+            document.getElementById('labelStandard').textContent = `Ставка ${rateStandard}%`;
+            document.getElementById('labelPenalty').textContent = `Ставка ${ratePenalty}%`;
+            document.getElementById('labelOdLess').textContent = `Менше 1000 грн (${rateStandard}%)`;
+            document.getElementById('labelOdMore').textContent = `≥ 1000 грн (${ratePenalty}%)`;
+            document.getElementById('resLabelStandard').textContent = `Відсотки ${rateStandard}%`;
+            document.getElementById('resLabelPenalty').textContent = `Відсотки ${ratePenalty}%`;
+        }
+
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -328,7 +373,7 @@
 
         function calculateCredit() {
             const daysInYear = document.getElementById('leapYearCredit').checked ? 366 : 365;
-            let log31 = "", log62 = "", logOd = "";
+            let logStd = "", logPen = "", logOd = "";
             
             const calcGroup = (selector, rate) => {
                 let total = 0, logText = "";
@@ -353,21 +398,21 @@
                 return {total, logText};
             };
 
-            const res31 = calcGroup('#periods31 .period-card', 3.1);
-            const res62 = calcGroup('#periods62 .period-card', 6.2);
-            const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? 6.2 : 3.1;
+            const resStd = calcGroup('#periods31 .period-card', rateStandard);
+            const resPen = calcGroup('#periods62 .period-card', ratePenalty);
+            const odRate = document.querySelector('input[name="overdraftRange"]:checked').value === 'more' ? ratePenalty : rateStandard;
             const resOd = calcGroup('#periodsOverdraft .period-card', odRate);
 
-            document.getElementById('interest31').textContent = res31.total.toFixed(2) + ' грн';
-            document.getElementById('interest62').textContent = res62.total.toFixed(2) + ' грн';
-            document.getElementById('totalInterest').textContent = (res31.total + res62.total).toFixed(2) + ' грн';
+            document.getElementById('interest31').textContent = resStd.total.toFixed(2) + ' грн';
+            document.getElementById('interest62').textContent = resPen.total.toFixed(2) + ' грн';
+            document.getElementById('totalInterest').textContent = (resStd.total + resPen.total).toFixed(2) + ' грн';
             document.getElementById('appliedRate').textContent = odRate + '%';
             document.getElementById('interestOverdraft').textContent = resOd.total.toFixed(2) + ' грн';
             document.getElementById('resultCredit').style.display = 'block';
 
             let fullLog = "";
-            if(res31.logText) fullLog += "=== 3.1% ===\n" + res31.logText + "\n";
-            if(res62.logText) fullLog += "=== 6.2% ===\n" + res62.logText + "\n";
+            if(resStd.logText) fullLog += `=== СТАНДАРТ ${rateStandard}% ===\n` + resStd.logText + "\n";
+            if(resPen.logText) fullLog += `=== ПІДВИЩЕНА ${ratePenalty}% ===\n` + resPen.logText + "\n";
             if(resOd.logText) fullLog += `=== ОВЕРДРАФТ ${odRate}% ===\n` + resOd.logText;
             document.getElementById('detailsLogText').textContent = fullLog;
         }
@@ -449,7 +494,6 @@
                 let effectivePayment = rawInput; 
                 let displayHelper = row.querySelector('.effective-val');
 
-                // Logic based on per-row checkbox
                 if (checkboxElem.checked && rawInput > 0) {
                     const cellCommission = rawInput * 0.04;
                     if (!displayHelper) {
@@ -482,7 +526,6 @@
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // Update Final Summary
             document.getElementById('kdzRemBody').textContent = currentBody.toFixed(2) + ' грн';
             document.getElementById('kdzRemInt').textContent = accumulatedInt.toFixed(2) + ' грн';
             document.getElementById('kdzTotalDebt').textContent = (currentBody + accumulatedInt).toFixed(2) + ' грн';
@@ -493,7 +536,8 @@
             if (e.target.matches('.is-credit-row')) recalculateKdz();
         });
         
-        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals();
+        // Init
+        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals(); switchCard('black');
     </script>
 </body>
 </html>
