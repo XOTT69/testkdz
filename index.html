@@ -172,7 +172,8 @@
         .kdz-table tr:last-child td { border-bottom: none; }
         .kdz-input { width: 100%; padding: 2px 6px; font-size: 13px; text-align: right; border: 1px solid var(--color-border); border-radius: 4px; height: 26px; margin: 0; }
         .kdz-input:focus { border-color: var(--color-primary); outline: none; }
-        
+        .kdz-input.error { border-color: var(--color-error); background-color: rgba(229, 77, 77, 0.1); }
+
         .text-dim { color: var(--color-text-secondary); font-size: 12px; }
         .text-bold { font-weight: 600; }
         
@@ -378,7 +379,7 @@
                     </table>
                 </div>
 
-                <!-- NEW PAYMENT SECTION -->
+                <!-- PAYMENT SECTION -->
                 <div class="payment-section">
                     <h3 style="margin-top: 0; margin-bottom: var(--space-sm);">Повне погашення</h3>
                     <div class="grid-2" style="align-items: flex-start;">
@@ -563,7 +564,7 @@
         function copyDetailsInst() { navigator.clipboard.writeText(document.getElementById('detailsLogInst').textContent).then(() => alert('Copied!')); }
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
-        // KDZ
+        // === KDZ LOGIC WITH TABLE LIMITER ===
         function resetKdz() {
             document.querySelectorAll('#kdzTbody input').forEach(inp => inp.value = '');
             document.getElementById('kdzTotalPayInput').value = '';
@@ -594,27 +595,46 @@
             const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
             const rows = document.querySelectorAll('#kdzTbody tr');
+            const totalRows = rows.length;
             
             let currentBody = startBody;
             let accumulatedInt = 0;
             
-            // 1. Calculate table accumulation based on MANUAL daily inputs (if any)
-            rows.forEach(row => {
-                const payBody = parseFloat(row.querySelector('.input-body').value) || 0;
+            rows.forEach((row, index) => {
+                let payInput = parseFloat(row.querySelector('.input-body').value) || 0;
+                const inputElem = row.querySelector('.input-body');
+
                 row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
                 
+                // Interest accrual 
                 const dailyInt = currentBody * rate / 100;
                 accumulatedInt += dailyInt;
-                
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
-                currentBody -= payBody;
+                
+                // === VALIDATION: Max Payment ===
+                // If accumulated interest exists (>0.001), we CANNOT pay off full body (must leave 0.01)
+                let maxAllowed = currentBody;
+                if (accumulatedInt > 0.001) {
+                    maxAllowed = Math.max(0, currentBody - 0.01);
+                }
+
+                if (payInput > maxAllowed) {
+                    payInput = maxAllowed;
+                    inputElem.value = payInput.toFixed(2); // Auto-correct input
+                    // Visual cue
+                    inputElem.style.borderColor = "var(--color-error)";
+                    setTimeout(() => inputElem.style.borderColor = "", 1000);
+                }
+
+                // Apply payment to Body
+                currentBody -= payInput;
                 if(currentBody < 0) currentBody = 0;
                 
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
             });
 
-            // 2. Final Settlement Logic
+            // 2. Final Settlement
             const totalDebt = currentBody + accumulatedInt;
             document.getElementById('liveTotalDebt').textContent = totalDebt.toFixed(2) + ' грн';
 
@@ -622,14 +642,13 @@
             const isCredit = document.getElementById('kdzIsCredit').checked;
             const errorMsg = document.getElementById('kdzError');
 
-            if (totalPayment > totalDebt + 0.01) { // 0.01 floating point tolerance
+            if (totalPayment > totalDebt + 0.01) { 
                 errorMsg.classList.add('visible');
-                // Cap visual logic to debt, but warn
             } else {
                 errorMsg.classList.remove('visible');
             }
 
-            // Distribute Payment: First Interest, Then Body
+            // Payment logic
             let paymentForInterest = 0;
             let paymentForBody = 0;
 
@@ -645,7 +664,6 @@
             const remainingBody = currentBody - paymentForBody;
             const commission = isCredit ? totalPayment * 0.04 : 0;
 
-            // Update UI
             document.getElementById('liveInterestPaid').textContent = paymentForInterest.toFixed(2) + ' грн';
             document.getElementById('liveBodyPaid').textContent = paymentForBody.toFixed(2) + ' грн';
             document.getElementById('liveBodyRemain').textContent = remainingBody.toFixed(2) + ' грн';
@@ -653,7 +671,12 @@
         }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
-        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals();
+        // Init
+        addPeriod31(); 
+        addPeriod62(); 
+        addPeriodOverdraft(); 
+        rebuildKdzTable(); 
+        updateSliderVisuals();
     </script>
 </body>
 </html>
