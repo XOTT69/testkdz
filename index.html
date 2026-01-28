@@ -60,7 +60,7 @@
         /* Compact Headers */
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; color: var(--color-text); }
         .subtitle { color: var(--color-text-secondary); margin-bottom: var(--space-lg); font-size: 13px; }
-        h2 { font-size: 18px; margin: 0; font-weight: 600; } /* Reset margin for flex headers */
+        h2 { font-size: 18px; margin: 0; font-weight: 600; } 
         h3 { font-size: 15px; margin: var(--space-md) 0 var(--space-sm) 0; font-weight: 600; }
         
         /* Compact Tabs */
@@ -88,12 +88,11 @@
             margin-bottom: var(--space-lg);
         }
         
-        /* Uniform Card Header */
         .card-header-row {
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            margin-bottom: var(--space-lg); /* Consistent spacing for all cards */
+            margin-bottom: var(--space-lg);
             min-height: 32px;
         }
 
@@ -283,13 +282,12 @@
 <body>
     <div class="container">
         <h1>🏦 Калькулятор monobank</h1>
-        <!-- Dynamic subtitle -->
-        <p class="subtitle" id="mainSubtitle">Розрахунок процентів за кредитним лімітом</p>
+        <p class="subtitle">Розрахунок вартості користування кредитними коштами</p>
         
         <div class="tabs">
-            <button class="tab active" data-tab="credit" data-sub="Розрахунок процентів за кредитним лімітом">Кредитний ліміт</button>
-            <button class="tab" data-tab="installment" data-sub="Розрахунок платежів та комісій за розстрочкою">Розстрочка</button>
-            <button class="tab" data-tab="kdz" data-sub="Розрахунок вартості кредиту до зарплати">КДЗ (Калькулятор)</button>
+            <button class="tab active" data-tab="credit">Кредитний ліміт</button>
+            <button class="tab" data-tab="installment">Розстрочка</button>
+            <button class="tab" data-tab="kdz">КДЗ (Калькулятор)</button>
         </div>
         
         <!-- ======================= -->
@@ -368,7 +366,6 @@
         <!-- ======================= -->
         <div class="tab-content" id="installment">
             <div class="card">
-                <!-- Uniform Header for Installment -->
                 <div class="card-header-row">
                     <div style="display: flex; align-items: center;">
                         <h2>Розстрочка</h2>
@@ -546,9 +543,7 @@
                 const tabId = tab.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
                 
-                // Update Subtitle
-                const newSub = tab.getAttribute('data-sub');
-                document.getElementById('mainSubtitle').textContent = newSub;
+                // No subtitle change, fixed as requested
 
                 if(tabId === 'kdz' && document.getElementById('kdzTbody').children.length === 0) rebuildKdzTable();
             });
