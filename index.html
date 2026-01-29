@@ -60,7 +60,6 @@
         input[type="number"], input[type="date"], select { width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-base); font-size: 14px; background-color: var(--color-background); color: var(--color-text); transition: border-color 0.2s; height: 36px; font-family: inherit; }
         input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
         
-        /* Slider styles */
         .slider-container { width: 100%; padding: 10px 0; position: relative; }
         .slider-value-display { font-size: 24px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
         .slider-labels { display: flex; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; margin-top: 4px; }
@@ -149,7 +148,7 @@
                         <label style="display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; cursor: pointer;">
                             <input type="checkbox" id="leapYearCredit" style="width: auto;"> 366 днів
                         </label>
-                        <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetCredit()">🔄 Очистити</button>
+                        <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetCredit()">🔄 Очистити все</button>
                     </div>
                 </div>
                 
@@ -285,6 +284,16 @@
                         <span class="result-label" style="font-weight: 600;">Всього до повного погашення</span>
                         <span class="result-value highlight" id="kdzTotalDebt" style="color: var(--color-primary);">0.00 грн</span>
                     </div>
+                    
+                    <div class="details-log-container">
+                        <button class="text-link" onclick="toggleDetailsKdz()">📜 Показати розшифровку КДЗ</button>
+                        <div id="detailsAreaKdz" style="display: none;">
+                            <div class="details-log" id="detailsLogKdz"></div>
+                            <div class="copy-btn-container">
+                                <button class="btn btn-outline" style="width: auto; height: 28px; padding: 0 12px; font-size: 12px;" onclick="copyDetailsKdz()">Копіювати звіт</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -365,7 +374,7 @@
         function resetCredit() {
             document.getElementById('periods31').innerHTML = ''; document.getElementById('periods62').innerHTML = ''; document.getElementById('periodsOverdraft').innerHTML = '';
             periodCounter31 = 0; periodCounter62 = 0; periodCounterOverdraft = 0;
-            addPeriod31(); addPeriod62(); addPeriodOverdraft();
+            // Removed automatic addition of empty periods
             document.getElementById('leapYearCredit').checked = false;
             document.querySelector('input[name="overdraftRange"][value="less"]').checked = true;
             document.getElementById('resultCredit').style.display = 'none';
@@ -460,7 +469,15 @@
         function resetInst() { document.getElementById('amountInst').value = '30000'; document.getElementById('monthsInst').value = 6; updateSliderVisuals(); document.getElementById('resultInst').style.display = 'none'; document.getElementById('instError').classList.remove('visible'); }
 
         // KDZ LOGIC
-        function resetKdz() { document.querySelectorAll('#kdzTbody input').forEach(inp => { inp.value = ''; inp.parentElement.querySelector('.effective-val')?.remove(); }); document.querySelectorAll('.is-credit-row').forEach(cb => cb.checked = false); recalculateKdz(); }
+        function resetKdz() { 
+            document.querySelectorAll('#kdzTbody input').forEach(inp => { 
+                inp.value = ''; 
+                inp.parentElement.querySelector('.effective-val')?.remove(); 
+            }); 
+            document.querySelectorAll('.is-credit-row').forEach(cb => cb.checked = false); 
+            recalculateKdz(); 
+        }
+
         function rebuildKdzTable() {
             let days = parseInt(document.getElementById('kdzDays').value) || 14;
             if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
@@ -479,19 +496,53 @@
             }
             recalculateKdz();
         }
+
         function recalculateKdz() {
             const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
             
             const rows = document.querySelectorAll('#kdzTbody tr');
-            let currentBody = startBody; let accumulatedInt = 0;
-            
-            rows.forEach((row) => {
+            let currentBody = startBody; 
+            let accumulatedInt = 0;
+            let logText = `СУМА: ${startBody.toFixed(2)} грн | СТАВКА: ${rate}%/день\n--------------------------------\n`;
+
+            rows.forEach((row, index) => {
+                const dayNum = index + 1;
                 const inputElem = row.querySelector('.input-body');
                 const checkboxElem = row.querySelector('.is-credit-row');
                 
+                // --- Logic Update: Interest base is previous day's end body ---
+                // For day 1, base is startBody. For others, it's what we calculated as end body of previous loop
+                // BUT we calculate row by row.
+                // So for current row, the "Morning Body" is effectively the base for interest if we consider overnight.
+                // However, the user request is: "Interest should be calculated on balance at end of day."
+                // Wait, if I pay on Day 2, I shouldn't pay interest for Day 2?
+                // Standard logic: Interest for Day 1 is calculated on the balance present at the end of Day 1 (overnight to Day 2).
+                // If I pay full on Day 2, the balance at end of Day 2 is 0. So Interest for Day 2 is 0.
+                // Let's implement that: Daily Int = (End Body of Current Day) * Rate.
+                // But typically banks charge based on start of day or end of day? The user said: "Interest will be charged on remaining balance at end of day".
+                
+                // Let's restart variable flow for this logic:
+                // Start of Day 1: 5000. 
+                // Payment Day 1: 0. 
+                // End of Day 1: 5000. 
+                // Interest Day 1: 5000 * 0.3% = 15.
+                
+                // Start of Day 2: 5000.
+                // Payment Day 2: 5000.
+                // End of Day 2: 0.
+                // Interest Day 2: 0 * 0.3% = 0.
+                
+                // This seems to be what user wants.
+                
+                // Visual Update: "Body (Morning)" is just the carry over.
+                
+                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
+                const startOfDayBody = currentBody;
+
                 let rawInput = parseFloat(inputElem.value) || 0;
                 let effectivePayment = rawInput; 
+                let commissionText = "";
                 let displayHelper = row.querySelector('.effective-val');
 
                 if (checkboxElem.checked && rawInput > 0) {
@@ -502,15 +553,10 @@
                         inputElem.parentElement.appendChild(displayHelper);
                     }
                     displayHelper.textContent = `+${cellCommission.toFixed(2)} комісія`;
+                    commissionText = ` (+${cellCommission.toFixed(2)} комісія)`;
                 } else {
                      if (displayHelper) displayHelper.remove();
                 }
-
-                row.querySelector('.cell-body-start').textContent = currentBody.toFixed(2);
-                
-                const dailyInt = currentBody * rate / 100;
-                accumulatedInt += dailyInt;
-                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
 
                 if (effectivePayment > currentBody) {
                      effectivePayment = currentBody; 
@@ -521,15 +567,34 @@
 
                 currentBody -= effectivePayment; 
                 if(currentBody < 0) currentBody = 0;
+                
+                // Interest calculation on END of day balance
+                const dailyInt = currentBody * rate / 100;
+                accumulatedInt += dailyInt;
 
+                row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
                 row.querySelector('.cell-body-end').textContent = currentBody.toFixed(2);
                 row.querySelector('.cell-int-accum').textContent = accumulatedInt.toFixed(2);
+
+                // Logging
+                logText += `День ${dayNum}:\n`;
+                logText += `  Тіло на ранок: ${startOfDayBody.toFixed(2)}\n`;
+                if(rawInput > 0) logText += `  Погашення: -${rawInput.toFixed(2)}${commissionText}\n`;
+                logText += `  Тіло на вечір: ${currentBody.toFixed(2)}\n`;
+                logText += `  Відсоток: ${currentBody.toFixed(2)} × ${rate}% = ${dailyInt.toFixed(2)}\n`;
+                logText += `--------------------------------\n`;
             });
+
+            logText += `Всього борг: ${(currentBody + accumulatedInt).toFixed(2)} грн`;
 
             document.getElementById('kdzRemBody').textContent = currentBody.toFixed(2) + ' грн';
             document.getElementById('kdzRemInt').textContent = accumulatedInt.toFixed(2) + ' грн';
             document.getElementById('kdzTotalDebt').textContent = (currentBody + accumulatedInt).toFixed(2) + ' грн';
+            document.getElementById('detailsLogKdz').textContent = logText;
         }
+        
+        function toggleDetailsKdz() { const el = document.getElementById('detailsAreaKdz'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+        function copyDetailsKdz() { navigator.clipboard.writeText(document.getElementById('detailsLogKdz').textContent).then(() => alert('Copied!')); }
 
         document.getElementById('kdzTable').addEventListener('input', recalculateKdz);
         document.getElementById('kdzTable').addEventListener('change', (e) => {
@@ -537,7 +602,8 @@
         });
         
         // Init
-        addPeriod31(); addPeriod62(); addPeriodOverdraft(); rebuildKdzTable(); updateSliderVisuals(); switchCard('black');
+        // Don't auto-add periods for credit limit anymore
+        rebuildKdzTable(); updateSliderVisuals(); switchCard('black');
     </script>
 </body>
 </html>
