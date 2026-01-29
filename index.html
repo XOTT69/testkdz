@@ -248,8 +248,8 @@
                     <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetKdz()">🔄 Очистити все</button>
                 </div>
                 <div class="grid-3" style="align-items: flex-end; margin-bottom: var(--space-lg);">
-                    <div class="form-group" style="margin-bottom: 0;"><label>Тіло (грн)</label><input type="number" id="kdzBody" value="5000" oninput="rebuildKdzTable()"></div>
-                    <div class="form-group" style="margin-bottom: 0;"><label>Днів (max 30)</label><input type="number" id="kdzDays" value="14" min="1" max="30" oninput="rebuildKdzTable()"></div>
+                    <div class="form-group" style="margin-bottom: 0;"><label>Тіло (грн)</label><input type="number" id="kdzBody" value="1000" oninput="rebuildKdzTable()"></div>
+                    <div class="form-group" style="margin-bottom: 0;"><label>Днів (max 30)</label><input type="number" id="kdzDays" value="2" min="1" max="30" oninput="rebuildKdzTable()"></div>
                     <div class="form-group" style="margin-bottom: 0;"><label>Ставка/день</label><select id="kdzRate" onchange="recalculateKdz()"><option value="0.3">0.3%</option><option value="0.5">0.5%</option></select></div>
                 </div>
 
@@ -465,14 +465,14 @@
         // KDZ LOGIC
         function resetKdz() { 
             // Full Reset Logic: Defaults
-            document.getElementById('kdzBody').value = 5000;
-            document.getElementById('kdzDays').value = 14;
+            document.getElementById('kdzBody').value = 1000;
+            document.getElementById('kdzDays').value = 2;
             document.getElementById('kdzRate').value = '0.3';
             rebuildKdzTable(); 
         }
 
         function rebuildKdzTable() {
-            let days = parseInt(document.getElementById('kdzDays').value) || 14;
+            let days = parseInt(document.getElementById('kdzDays').value) || 2;
             if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
             const tbody = document.getElementById('kdzTbody'); tbody.innerHTML = '';
             for (let d = 1; d <= days; d++) {
@@ -490,7 +490,7 @@
         }
 
         function recalculateKdz() {
-            const startBody = parseFloat(document.getElementById('kdzBody').value) || 5000;
+            const startBody = parseFloat(document.getElementById('kdzBody').value) || 1000;
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
             
             const rows = document.querySelectorAll('#kdzTbody tr');
