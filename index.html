@@ -535,8 +535,25 @@
                 currentBody -= effectivePayment; 
                 if(currentBody < 0) currentBody = 0;
                 
-                // THEN CALCULATE INTEREST ON THE RESULT
-                const dailyInt = currentBody * rate / 100;
+                // --- MODIFIED LOGIC HERE ---
+                // Day 1 (index 0): Interest is ALWAYS charged based on start-of-day body.
+                // Subsequent Days (index > 0): Interest is charged only if carry-over (currentBody) > 0.
+                
+                let dailyInt = 0;
+                
+                if (index === 0) {
+                     // First day: Interest on START body (full original loan amount)
+                     // even if paid off same day.
+                     dailyInt = startOfDayBody * rate / 100;
+                } else {
+                     // Next days: Interest on END body (remaining balance after payment)
+                     // If paid off fully, currentBody is 0, so int is 0.
+                     // Wait, standard banking logic is typically overnight.
+                     // The user request was: "Day 2 body 1000, if paid -> interest 0".
+                     // This implies interest is calculated on the END-OF-DAY balance for Day 2+.
+                     dailyInt = currentBody * rate / 100;
+                }
+                
                 accumulatedInt += dailyInt;
 
                 row.querySelector('.cell-int-daily').textContent = '+' + dailyInt.toFixed(2);
@@ -546,7 +563,12 @@
                 logText += `  Тіло на ранок: ${startOfDayBody.toFixed(2)}\n`;
                 if(rawInput > 0) logText += `  Погашення: -${rawInput.toFixed(2)}${commissionText}\n`;
                 logText += `  Тіло на вечір: ${currentBody.toFixed(2)}\n`;
-                logText += `  Відсоток: ${currentBody.toFixed(2)} × ${rate}% = ${dailyInt.toFixed(2)}\n`;
+                
+                if (index === 0) {
+                     logText += `  Відсоток (День 1 - завжди): ${startOfDayBody.toFixed(2)} × ${rate}% = ${dailyInt.toFixed(2)}\n`;
+                } else {
+                     logText += `  Відсоток (День ${dayNum}): ${currentBody.toFixed(2)} × ${rate}% = ${dailyInt.toFixed(2)}\n`;
+                }
                 logText += `--------------------------------\n`;
             });
 
