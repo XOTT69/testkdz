@@ -257,7 +257,7 @@
                     <table class="kdz-table" id="kdzTable">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 30px;">#</th>
+                                <th style="text-align: center; width: 40px;">День</th>
                                 <th>Тіло (ранок)</th> 
                                 <th style="background-color: rgba(94, 82, 64, 0.04);">Погашення тіла</th>
                                 <th style="text-align: center; font-size: 10px; color: var(--color-text-secondary);">З кредитних?</th>
@@ -535,10 +535,6 @@
                 currentBody -= effectivePayment; 
                 if(currentBody < 0) currentBody = 0;
                 
-                // --- MODIFIED LOGIC HERE ---
-                // Day 1 (index 0): Interest is ALWAYS charged based on start-of-day body.
-                // Subsequent Days (index > 0): Interest is charged only if carry-over (currentBody) > 0.
-                
                 let dailyInt = 0;
                 
                 if (index === 0) {
@@ -547,10 +543,6 @@
                      dailyInt = startOfDayBody * rate / 100;
                 } else {
                      // Next days: Interest on END body (remaining balance after payment)
-                     // If paid off fully, currentBody is 0, so int is 0.
-                     // Wait, standard banking logic is typically overnight.
-                     // The user request was: "Day 2 body 1000, if paid -> interest 0".
-                     // This implies interest is calculated on the END-OF-DAY balance for Day 2+.
                      dailyInt = currentBody * rate / 100;
                 }
                 
