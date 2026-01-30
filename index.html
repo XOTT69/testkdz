@@ -59,7 +59,8 @@
         
         input[type="number"], input[type="date"], select { width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-base); font-size: 14px; background-color: var(--color-background); color: var(--color-text); transition: border-color 0.2s; height: 36px; font-family: inherit; }
         input[type="number"]:focus, input[type="date"]:focus, select:focus { outline: none; border-color: var(--color-primary); }
-        
+        input[type="number"].input-error { border-color: var(--color-error); background-color: rgba(229, 77, 77, 0.05); }
+
         .slider-container { width: 100%; padding: 10px 0; position: relative; }
         .slider-value-display { font-size: 24px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
         .slider-labels { display: flex; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; margin-top: 4px; }
@@ -114,6 +115,7 @@
 
         .error-message { color: var(--color-error); font-size: 12px; font-weight: 600; margin-top: 4px; display: none; }
         .error-message.visible { display: block; }
+        .inline-error { color: var(--color-error); font-size: 11px; margin-top: 2px; display: none; }
         
         .card-type-toggle { display: inline-flex; background: var(--color-background); border: 1px solid var(--color-border); border-radius: 20px; padding: 2px; height: 32px; }
         .toggle-option { padding: 0 16px; display: flex; align-items: center; cursor: pointer; border-radius: 16px; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); transition: all 0.2s; }
@@ -247,10 +249,21 @@
                     <h2>Кредит «До завтра»</h2>
                     <button class="btn btn-ghost" style="width: auto; margin: 0; padding: 0 8px; height: 28px; font-size: 12px;" onclick="resetKdz()">🔄 Очистити все</button>
                 </div>
-                <div class="grid-3" style="align-items: flex-end; margin-bottom: var(--space-lg);">
-                    <div class="form-group" style="margin-bottom: 0;"><label>Тіло (грн, мін 1000)</label><input type="number" id="kdzBody" value="1000" min="1000" onchange="validateKdzInputs()" oninput="rebuildKdzTable()"></div>
-                    <div class="form-group" style="margin-bottom: 0;"><label>Днів (мін 2, макс 30)</label><input type="number" id="kdzDays" value="2" min="2" max="30" onchange="validateKdzInputs()" oninput="rebuildKdzTable()"></div>
-                    <div class="form-group" style="margin-bottom: 0;"><label>Ставка/день</label><select id="kdzRate" onchange="recalculateKdz()"><option value="0.3">0.3%</option><option value="0.5">0.5%</option></select></div>
+                <div class="grid-3" style="align-items: flex-start; margin-bottom: var(--space-lg);">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Тіло (грн, мін 1000)</label>
+                        <input type="number" id="kdzBody" value="1000" onblur="validateKdzInputs(true)" oninput="handleKdzInput()">
+                        <div class="inline-error" id="errBody">Мін. сума 1000 грн</div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Днів (мін 2, макс 30)</label>
+                        <input type="number" id="kdzDays" value="2" min="2" max="30" onblur="validateKdzInputs(true)" oninput="handleKdzInput()">
+                        <div class="inline-error" id="errDays">Мін. 2 дні</div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Ставка/день</label>
+                        <select id="kdzRate" onchange="recalculateKdz()"><option value="0.3">0.3%</option><option value="0.5">0.5%</option></select>
+                    </div>
                 </div>
 
                 <div class="kdz-table-container">
@@ -468,22 +481,52 @@
             document.getElementById('kdzBody').value = 1000;
             document.getElementById('kdzDays').value = 2;
             document.getElementById('kdzRate').value = '0.3';
+            document.getElementById('errBody').style.display = 'none';
+            document.getElementById('errDays').style.display = 'none';
+            document.getElementById('kdzBody').classList.remove('input-error');
+            document.getElementById('kdzDays').classList.remove('input-error');
             rebuildKdzTable(); 
         }
 
-        function validateKdzInputs() {
+        function validateKdzInputs(autoFix = false) {
             let body = document.getElementById('kdzBody');
             let days = document.getElementById('kdzDays');
+            let bodyVal = parseFloat(body.value);
+            let daysVal = parseInt(days.value);
             
-            if (parseFloat(body.value) < 1000) body.value = 1000;
-            if (parseInt(days.value) < 2) days.value = 2;
+            let valid = true;
+            
+            if (bodyVal < 1000 || isNaN(bodyVal)) {
+                if(autoFix) { body.value = 1000; body.classList.remove('input-error'); document.getElementById('errBody').style.display = 'none'; }
+                else { body.classList.add('input-error'); document.getElementById('errBody').style.display = 'block'; valid = false; }
+            } else {
+                body.classList.remove('input-error'); document.getElementById('errBody').style.display = 'none';
+            }
+
+            if (daysVal < 2 || isNaN(daysVal)) {
+                if(autoFix) { days.value = 2; days.classList.remove('input-error'); document.getElementById('errDays').style.display = 'none'; }
+                else { days.classList.add('input-error'); document.getElementById('errDays').style.display = 'block'; valid = false; }
+            } else {
+                days.classList.remove('input-error'); document.getElementById('errDays').style.display = 'none';
+            }
+            
+            return valid;
+        }
+        
+        function handleKdzInput() {
+            // Allows free typing, just shows warning visual
+            validateKdzInputs(false);
+            
+            // Only rebuild table if values are actually valid numbers, even if out of range visually
+            let d = parseInt(document.getElementById('kdzDays').value);
+            if (!isNaN(d) && d > 0) rebuildKdzTable(); 
         }
 
         function rebuildKdzTable() {
-            validateKdzInputs();
-            
-            let days = parseInt(document.getElementById('kdzDays').value) || 2;
-            if (days > 30) { days = 30; document.getElementById('kdzDays').value = 30; }
+            let days = parseInt(document.getElementById('kdzDays').value);
+            if (isNaN(days) || days < 1) return; // Don't crash on empty input
+            if (days > 30) { days = 30; } // Soft cap for rendering
+
             const tbody = document.getElementById('kdzTbody'); tbody.innerHTML = '';
             for (let d = 1; d <= days; d++) {
                 const tr = document.createElement('tr');
@@ -500,7 +543,7 @@
         }
 
         function recalculateKdz() {
-            const startBody = parseFloat(document.getElementById('kdzBody').value) || 1000;
+            const startBody = parseFloat(document.getElementById('kdzBody').value) || 0; // Use 0 if empty/invalid to avoid NaN
             const rate = parseFloat(document.getElementById('kdzRate').value) || 0.3;
             
             const rows = document.querySelectorAll('#kdzTbody tr');
@@ -548,11 +591,8 @@
                 let dailyInt = 0;
                 
                 if (index === 0) {
-                     // First day: Interest on START body (full original loan amount)
-                     // even if paid off same day.
                      dailyInt = startOfDayBody * rate / 100;
                 } else {
-                     // Next days: Interest on END body (remaining balance after payment)
                      dailyInt = currentBody * rate / 100;
                 }
                 
